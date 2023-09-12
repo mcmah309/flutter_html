@@ -9,6 +9,8 @@ import 'package:html/dom.dart' as dom;
 
 //export src for advanced custom render uses (e.g. casting context.tree)
 export 'package:flutter_html/src/anchor.dart';
+// expose for to extend for custom marking
+export 'package:flutter_html/src/builtins/builtins.dart';
 //export css_box_widget for use in extensions.
 export 'package:flutter_html/src/css_box_widget.dart';
 //export extension api
