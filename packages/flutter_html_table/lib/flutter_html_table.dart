@@ -111,7 +111,7 @@ class TableHtmlExtension extends HtmlExtension {
             builder: (_, constraints) {
               return _layoutCells(
                 context.styledElement as TableElement,
-                context.builtChildrenMap!,
+                context.buildChildrenMapMemoized!,
                 context,
                 constraints,
               );
@@ -123,7 +123,7 @@ class TableHtmlExtension extends HtmlExtension {
 
     return WidgetSpan(
       child: CssBoxWidget.withInlineSpanChildren(
-        children: context.inlineSpanChildren!,
+        children: context.buildInlineSpanChildrenMemoized!,
         style: Style(),
       ),
     );
