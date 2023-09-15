@@ -24,7 +24,7 @@ export 'package:flutter_html/src/tree/replaced_element.dart';
 export 'package:flutter_html/src/tree/styled_element.dart';
 
 typedef DocumentChangedCallback = Function(
-    {dom.Element document, Map<dom.Node, int> nodeToIndex});
+    dom.Element document, Map<dom.Node, int> nodeToIndex);
 
 class Html extends StatefulWidget {
   /// The `Html` widget takes HTML as input and displays a RichText
@@ -151,6 +151,7 @@ class Html extends StatefulWidget {
   /// An API that allows you to override the default style for any HTML element
   final Map<String, Style> style;
 
+  /// Called on init and whenever the document changes.
   final DocumentChangedCallback? documentChangedCallback;
 
   @override
@@ -168,6 +169,9 @@ class _HtmlState extends State<Html> {
         ? HtmlParser.parseHTML(widget.data!)
         : widget.documentElement!;
     nodeToIndex = NodeOrderProcessing.createNodeToIndexMap(documentElement);
+    if (widget.documentChangedCallback != null) {
+      widget.documentChangedCallback!(documentElement, nodeToIndex);
+    }
   }
 
   @override
@@ -181,8 +185,7 @@ class _HtmlState extends State<Html> {
       nodeToIndex.clear();
       nodeToIndex = NodeOrderProcessing.createNodeToIndexMap(documentElement);
       if (widget.documentChangedCallback != null) {
-        widget.documentChangedCallback!(
-            document: documentElement, nodeToIndex: nodeToIndex);
+        widget.documentChangedCallback!(documentElement, nodeToIndex);
       }
     }
   }
