@@ -36,11 +36,11 @@ class DetailsElementBuiltIn extends HtmlExtension {
               : AnchorKey.of(context.parser.key!, context.styledElement!),
           expandedAlignment: Alignment.centerLeft,
           title: childList.keys.isNotEmpty &&
-              childList.keys.first.name == "summary"
+                  childList.keys.first.name == "summary"
               ? CssBoxWidget.withInlineSpanChildren(
-            children: firstChild == null ? [] : [firstChild],
-            style: context.styledElement!.style,
-          )
+                  children: firstChild == null ? [] : [firstChild],
+                  style: context.styledElement!.style,
+                )
               : const Text("Details"),
           children: [
             CssBoxWidget.withInlineSpanChildren(

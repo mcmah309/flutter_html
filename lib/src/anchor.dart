@@ -1,56 +1,67 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_html/src/tree/styled_element.dart';
+import 'package:html/dom.dart' as dom;
 
-class AnchorKey extends GlobalKey {
-  static final Set<AnchorKey> _registry = <AnchorKey>{};
+/// Key used for hashing and retrieving
+class _BaseAnchorKey extends GlobalKey {
+  const _BaseAnchorKey._(this.parentKey, this.id) : super.constructor();
 
   final Key parentKey;
   final String id;
 
-  const AnchorKey._(this.parentKey, this.id) : super.constructor();
+  /// Create an anchor key if input is valid
+  static _BaseAnchorKey? _createFor(Key parentKey, String id) {
+    if (id == "[[No ID]]" || id.isEmpty) {
+      return null;
+    }
+    return _BaseAnchorKey._(parentKey, id);
+  }
 
-  /// Returns the anchor key if not already created
+  AnchorKey downCast(dom.Node node) => AnchorKey._(parentKey, id, node);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _BaseAnchorKey && parentKey == other.parentKey && id == other.id;
+
+  @override
+  int get hashCode => parentKey.hashCode ^ id.hashCode;
+}
+
+/// Full key with all the data
+class AnchorKey extends _BaseAnchorKey {
+  static final Set<AnchorKey> _registry = <AnchorKey>{};
+
+  final dom.Node node;
+
+  const AnchorKey._(Key parentKey, String id, this.node)
+      : super._(parentKey, id);
+
+  /// Returns a unique [AnchorKey]. i.e. The anchor key if not already created.
   static AnchorKey? of(Key parentKey, StyledElement styledElement) {
-    final key = createFor(parentKey, styledElement.elementId);
-    if (key == null || _registry.contains(key)) {
+    final baseKey =
+        _BaseAnchorKey._createFor(parentKey, styledElement.elementId);
+    if (baseKey == null || _registry.contains(baseKey)) {
       // Invalid id or already created a key with this id: silently ignore
       return null;
     }
+    final key = baseKey.downCast(styledElement.node);
     _registry.add(key);
     return key;
   }
 
   /// get anchor key if it already exists
   static AnchorKey? getFor(Key parentKey, String id) {
-    final key = createFor(parentKey, id);
-    if (key != null && _registry.contains(key)) {
-      return key;
-    }
-    return null;
-  }
-
-  /// Create an anchor key if input is valid
-  static AnchorKey? createFor(Key parentKey, String id) {
-    if (id == "[[No ID]]" || id.isEmpty) {
+    final baseKey = _BaseAnchorKey._createFor(parentKey, id);
+    if (baseKey == null || !_registry.contains(baseKey)) {
       return null;
     }
-    return AnchorKey._(parentKey, id);
+    return _registry.lookup(baseKey)!;
   }
 
   static void resetRegistry() {
     _registry.clear();
   }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is AnchorKey &&
-          runtimeType == other.runtimeType &&
-          parentKey == other.parentKey &&
-          id == other.id;
-
-  @override
-  int get hashCode => parentKey.hashCode ^ id.hashCode;
 
   @override
   String toString() {
