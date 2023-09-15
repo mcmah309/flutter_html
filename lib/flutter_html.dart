@@ -61,12 +61,14 @@ class Html extends StatefulWidget {
     this.onlyRenderTheseTags,
     this.doNotRenderTheseTags,
     Map<String, Style>? style,
+    Map<dom.Node, int>? nodeToIndex,
   })
       : documentElement = null,
         extensions = extensions ?? [],
         style = style ?? {},
         assert(data != null),
         _anchorKey = anchorKey ?? GlobalKey(),
+        nodeToIndex = nodeToIndex ?? {},
         super(key: key);
 
   Html.fromDom({
@@ -81,11 +83,14 @@ class Html extends StatefulWidget {
     this.doNotRenderTheseTags,
     this.onlyRenderTheseTags,
     this.style = const {},
-  })  : extensions = extensions ?? [],
+    Map<dom.Node, int>? nodeToIndex,
+  })
+      : extensions = extensions ?? [],
         data = null,
         assert(document != null),
         documentElement = document!.documentElement,
         _anchorKey = anchorKey ?? GlobalKey(),
+        nodeToIndex = nodeToIndex ?? {},
         super(key: key);
 
   Html.fromElement({
@@ -100,10 +105,13 @@ class Html extends StatefulWidget {
     this.doNotRenderTheseTags,
     this.onlyRenderTheseTags,
     this.style = const {},
-  })  : extensions = extensions ?? [],
+    Map<dom.Node, int>? nodeToIndex,
+  })
+      : extensions = extensions ?? [],
         data = null,
         assert(documentElement != null),
         _anchorKey = anchorKey ?? GlobalKey(),
+        nodeToIndex = nodeToIndex ?? {},
         super(key: key);
 
   /// A unique key for this Html widget to ensure uniqueness of anchors
@@ -146,13 +154,15 @@ class Html extends StatefulWidget {
   /// An API that allows you to override the default style for any HTML element
   final Map<String, Style> style;
 
+  /// Each node to the character index of the node
+  final Map<dom.Node, int> nodeToIndex;
+
   @override
   State<StatefulWidget> createState() => _HtmlState();
 }
 
 class _HtmlState extends State<Html> {
   late dom.Element documentElement;
-  late Map<dom.Node, int> nodeToIndex;
 
   @override
   void initState() {
@@ -160,7 +170,9 @@ class _HtmlState extends State<Html> {
     documentElement = widget.data != null
         ? HtmlParser.parseHTML(widget.data!)
         : widget.documentElement!;
-    nodeToIndex = NodeOrderProcessing.createNodeToIndexMap(documentElement);
+    widget.nodeToIndex.clear();
+    widget.nodeToIndex
+        .addAll(NodeOrderProcessing.createNodeToIndexMap(documentElement));
   }
 
   @override
@@ -171,8 +183,9 @@ class _HtmlState extends State<Html> {
       documentElement = widget.data != null
           ? HtmlParser.parseHTML(widget.data!)
           : widget.documentElement!;
-      nodeToIndex.clear();
-      nodeToIndex = NodeOrderProcessing.createNodeToIndexMap(documentElement);
+      widget.nodeToIndex.clear();
+      widget.nodeToIndex
+          .addAll(NodeOrderProcessing.createNodeToIndexMap(documentElement));
     }
   }
 
@@ -181,7 +194,7 @@ class _HtmlState extends State<Html> {
     return HtmlParser(
       key: widget._anchorKey,
       htmlData: documentElement,
-      nodeToIndex: nodeToIndex,
+      nodeToIndex: widget.nodeToIndex,
       onLinkTap: widget.onLinkTap,
       onAnchorTap: widget.onAnchorTap,
       onCssParseError: widget.onCssParseError,
