@@ -23,6 +23,9 @@ export 'package:flutter_html/src/tree/interactable_element.dart';
 export 'package:flutter_html/src/tree/replaced_element.dart';
 export 'package:flutter_html/src/tree/styled_element.dart';
 
+typedef DocumentChangedCallback = Function(
+    {dom.Element document, Map<dom.Node, int> nodeToIndex});
+
 class Html extends StatefulWidget {
   /// The `Html` widget takes HTML as input and displays a RichText
   /// tree of the parsed HTML content.
@@ -61,14 +64,12 @@ class Html extends StatefulWidget {
     this.onlyRenderTheseTags,
     this.doNotRenderTheseTags,
     Map<String, Style>? style,
-    Map<dom.Node, int>? nodeToIndex,
-  })
-      : documentElement = null,
+    this.documentChangedCallback,
+  })  : documentElement = null,
         extensions = extensions ?? [],
         style = style ?? {},
         assert(data != null),
         _anchorKey = anchorKey ?? GlobalKey(),
-        nodeToIndex = nodeToIndex ?? {},
         super(key: key);
 
   Html.fromDom({
@@ -83,14 +84,12 @@ class Html extends StatefulWidget {
     this.doNotRenderTheseTags,
     this.onlyRenderTheseTags,
     this.style = const {},
-    Map<dom.Node, int>? nodeToIndex,
-  })
-      : extensions = extensions ?? [],
+    this.documentChangedCallback,
+  })  : extensions = extensions ?? [],
         data = null,
         assert(document != null),
         documentElement = document!.documentElement,
         _anchorKey = anchorKey ?? GlobalKey(),
-        nodeToIndex = nodeToIndex ?? {},
         super(key: key);
 
   Html.fromElement({
@@ -105,13 +104,11 @@ class Html extends StatefulWidget {
     this.doNotRenderTheseTags,
     this.onlyRenderTheseTags,
     this.style = const {},
-    Map<dom.Node, int>? nodeToIndex,
-  })
-      : extensions = extensions ?? [],
+    this.documentChangedCallback,
+  })  : extensions = extensions ?? [],
         data = null,
         assert(documentElement != null),
         _anchorKey = anchorKey ?? GlobalKey(),
-        nodeToIndex = nodeToIndex ?? {},
         super(key: key);
 
   /// A unique key for this Html widget to ensure uniqueness of anchors
@@ -154,8 +151,7 @@ class Html extends StatefulWidget {
   /// An API that allows you to override the default style for any HTML element
   final Map<String, Style> style;
 
-  /// Each node to the character index of the node
-  final Map<dom.Node, int> nodeToIndex;
+  final DocumentChangedCallback? documentChangedCallback;
 
   @override
   State<StatefulWidget> createState() => _HtmlState();
@@ -163,6 +159,7 @@ class Html extends StatefulWidget {
 
 class _HtmlState extends State<Html> {
   late dom.Element documentElement;
+  late Map<dom.Node, int> nodeToIndex;
 
   @override
   void initState() {
@@ -170,9 +167,7 @@ class _HtmlState extends State<Html> {
     documentElement = widget.data != null
         ? HtmlParser.parseHTML(widget.data!)
         : widget.documentElement!;
-    widget.nodeToIndex.clear();
-    widget.nodeToIndex
-        .addAll(NodeOrderProcessing.createNodeToIndexMap(documentElement));
+    nodeToIndex = NodeOrderProcessing.createNodeToIndexMap(documentElement);
   }
 
   @override
@@ -183,9 +178,12 @@ class _HtmlState extends State<Html> {
       documentElement = widget.data != null
           ? HtmlParser.parseHTML(widget.data!)
           : widget.documentElement!;
-      widget.nodeToIndex.clear();
-      widget.nodeToIndex
-          .addAll(NodeOrderProcessing.createNodeToIndexMap(documentElement));
+      nodeToIndex.clear();
+      nodeToIndex = NodeOrderProcessing.createNodeToIndexMap(documentElement);
+      if (widget.documentChangedCallback != null) {
+        widget.documentChangedCallback!(
+            document: documentElement, nodeToIndex: nodeToIndex);
+      }
     }
   }
 
@@ -194,7 +192,7 @@ class _HtmlState extends State<Html> {
     return HtmlParser(
       key: widget._anchorKey,
       htmlData: documentElement,
-      nodeToIndex: widget.nodeToIndex,
+      nodeToIndex: nodeToIndex,
       onLinkTap: widget.onLinkTap,
       onAnchorTap: widget.onAnchorTap,
       onCssParseError: widget.onCssParseError,
