@@ -281,7 +281,7 @@ class MyHomePageState extends State<MyHomePage> {
         child: const Icon(Icons.arrow_downward),
         onPressed: () {
           final anchorContext =
-              AnchorKey.forId(staticAnchorKey, "bottom")?.currentContext;
+              AnchorKey.createFor(staticAnchorKey, "bottom")?.currentContext;
           if (anchorContext != null) {
             Scrollable.ensureVisible(anchorContext);
           }

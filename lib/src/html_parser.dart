@@ -82,7 +82,7 @@ class HtmlParser extends StatefulWidget {
           (String? url, Map<String, String> attributes, html.Element? element) {
         if (url?.startsWith("#") == true) {
           final anchorContext =
-              AnchorKey.forId(key, url!.substring(1))?.currentContext;
+              AnchorKey.createFor(key, url!.substring(1))?.currentContext;
           if (anchorContext != null) {
             Scrollable.ensureVisible(anchorContext);
           }

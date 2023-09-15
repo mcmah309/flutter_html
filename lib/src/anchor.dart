@@ -9,8 +9,9 @@ class AnchorKey extends GlobalKey {
 
   const AnchorKey._(this.parentKey, this.id) : super.constructor();
 
-  static AnchorKey? of(Key? parentKey, StyledElement? id) {
-    final key = forId(parentKey, id?.elementId);
+  /// Returns the anchor key if not already created
+  static AnchorKey? of(Key parentKey, StyledElement styledElement) {
+    final key = createFor(parentKey, styledElement.elementId);
     if (key == null || _registry.contains(key)) {
       // Invalid id or already created a key with this id: silently ignore
       return null;
@@ -19,12 +20,25 @@ class AnchorKey extends GlobalKey {
     return key;
   }
 
-  static AnchorKey? forId(Key? parentKey, String? id) {
-    if (parentKey == null || id == null || id.isEmpty || id == "[[No ID]]") {
+  /// get anchor key if it already exists
+  static AnchorKey? getFor(Key parentKey, String id) {
+    final key = createFor(parentKey, id);
+    if (key != null && _registry.contains(key)) {
+      return key;
+    }
+    return null;
+  }
+
+  /// Create an anchor key if input is valid
+  static AnchorKey? createFor(Key parentKey, String id) {
+    if (id == "[[No ID]]" || id.isEmpty) {
       return null;
     }
-
     return AnchorKey._(parentKey, id);
+  }
+
+  static void resetRegistry() {
+    _registry.clear();
   }
 
   @override

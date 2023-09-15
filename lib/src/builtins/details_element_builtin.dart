@@ -31,14 +31,16 @@ class DetailsElementBuiltIn extends HtmlExtension {
     InlineSpan? firstChild = children.isNotEmpty ? children.first : null;
     return WidgetSpan(
       child: ExpansionTile(
-          key: AnchorKey.of(context.parser.key, context.styledElement!),
+          key: context.parser.key == null || context.styledElement == null
+              ? null
+              : AnchorKey.of(context.parser.key!, context.styledElement!),
           expandedAlignment: Alignment.centerLeft,
           title: childList.keys.isNotEmpty &&
-                  childList.keys.first.name == "summary"
+              childList.keys.first.name == "summary"
               ? CssBoxWidget.withInlineSpanChildren(
-                  children: firstChild == null ? [] : [firstChild],
-                  style: context.styledElement!.style,
-                )
+            children: firstChild == null ? [] : [firstChild],
+            style: context.styledElement!.style,
+          )
               : const Text("Details"),
           children: [
             CssBoxWidget.withInlineSpanChildren(

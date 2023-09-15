@@ -432,7 +432,9 @@ class StyledElementBuiltIn extends HtmlExtension {
         alignment: PlaceholderAlignment.baseline,
         baseline: TextBaseline.alphabetic,
         child: CssBoxWidget.withInlineSpanChildren(
-          key: AnchorKey.of(context.parser.key, context.styledElement),
+          key: context.parser.key == null || context.styledElement == null
+              ? null
+              : AnchorKey.of(context.parser.key!, context.styledElement!),
           style: context.styledElement!.style,
           shrinkWrap: context.parser.shrinkWrap,
           childIsReplaced: ["iframe", "img", "video", "audio"]

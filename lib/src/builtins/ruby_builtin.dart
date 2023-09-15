@@ -106,7 +106,9 @@ class RubyBuiltIn extends HtmlExtension {
       child: Padding(
         padding: EdgeInsets.only(top: rubySize),
         child: Wrap(
-          key: AnchorKey.of(context.parser.key, context.styledElement),
+          key: context.parser.key == null || context.styledElement == null
+              ? null
+              : AnchorKey.of(context.parser.key!, context.styledElement!),
           runSpacing: rubySize,
           children: widgets.map((e) {
             return Row(
