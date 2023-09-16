@@ -23,8 +23,8 @@ export 'package:flutter_html/src/tree/interactable_element.dart';
 export 'package:flutter_html/src/tree/replaced_element.dart';
 export 'package:flutter_html/src/tree/styled_element.dart';
 
-typedef DocumentChangedCallback = Function(
-    dom.Element document, Map<dom.Node, int> nodeToIndex);
+typedef DocumentCallback = Function(
+    dom.Element document, Map<dom.Node, int> nodeToIndex, Cause cause);
 
 class Html extends StatefulWidget {
   /// The `Html` widget takes HTML as input and displays a RichText
@@ -64,7 +64,7 @@ class Html extends StatefulWidget {
     this.onlyRenderTheseTags,
     this.doNotRenderTheseTags,
     Map<String, Style>? style,
-    this.documentChangedCallback,
+    this.documentCallback,
   })  : documentElement = null,
         extensions = extensions ?? [],
         style = style ?? {},
@@ -84,7 +84,7 @@ class Html extends StatefulWidget {
     this.doNotRenderTheseTags,
     this.onlyRenderTheseTags,
     this.style = const {},
-    this.documentChangedCallback,
+    this.documentCallback,
   })  : extensions = extensions ?? [],
         data = null,
         assert(document != null),
@@ -104,7 +104,7 @@ class Html extends StatefulWidget {
     this.doNotRenderTheseTags,
     this.onlyRenderTheseTags,
     this.style = const {},
-    this.documentChangedCallback,
+    this.documentCallback,
   })  : extensions = extensions ?? [],
         data = null,
         assert(documentElement != null),
@@ -152,7 +152,7 @@ class Html extends StatefulWidget {
   final Map<String, Style> style;
 
   /// Called on init and whenever the document changes.
-  final DocumentChangedCallback? documentChangedCallback;
+  final DocumentCallback? documentCallback;
 
   @override
   State<StatefulWidget> createState() => _HtmlState();
@@ -169,8 +169,8 @@ class _HtmlState extends State<Html> {
         ? HtmlParser.parseHTML(widget.data!)
         : widget.documentElement!;
     nodeToIndex = NodeOrderProcessing.createNodeToIndexMap(documentElement);
-    if (widget.documentChangedCallback != null) {
-      widget.documentChangedCallback!(documentElement, nodeToIndex);
+    if (widget.documentCallback != null) {
+      widget.documentCallback!(documentElement, nodeToIndex, Cause.init);
     }
   }
 
@@ -184,8 +184,9 @@ class _HtmlState extends State<Html> {
           : widget.documentElement!;
       nodeToIndex.clear();
       nodeToIndex = NodeOrderProcessing.createNodeToIndexMap(documentElement);
-      if (widget.documentChangedCallback != null) {
-        widget.documentChangedCallback!(documentElement, nodeToIndex);
+      if (widget.documentCallback != null) {
+        widget.documentCallback!(
+            documentElement, nodeToIndex, Cause.widgetChange);
       }
     }
   }
@@ -206,4 +207,9 @@ class _HtmlState extends State<Html> {
       onlyRenderTheseTags: widget.onlyRenderTheseTags,
     );
   }
+}
+
+enum Cause {
+  init,
+  widgetChange,
 }
