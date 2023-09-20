@@ -1,11 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_html/src/builtins/image_builtin.dart';
-import 'package:flutter_html/src/css_box_widget.dart';
 import 'package:flutter_html/src/extension/html_extension.dart';
 import 'package:flutter_html/src/html_parser.dart';
 import 'package:flutter_html/src/style.dart';
 import 'package:flutter_html/src/tree/styled_element.dart';
 import 'package:flutter_html/src/utils.dart';
+import 'package:flutter_html/src/widgets/css_box_widget.dart';
 import 'package:html/dom.dart' as html;
 
 class OnImageTapExtension extends ImageBuiltIn {
