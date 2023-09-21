@@ -46,8 +46,8 @@ class TextBuiltIn extends HtmlExtension {
   @override
   InlineSpan build(ExtensionContext context) {
     if (context.styledElement is LinebreakContentElement) {
-      return WidgetSpan(
-        child: const SizedBox.shrink(),
+      return TextSpan(
+        text: '\n',
         style: context.styledElement!.style.generateTextStyle(),
       );
     }

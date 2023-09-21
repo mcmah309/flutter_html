@@ -27,7 +27,7 @@ typedef DocumentCallback = Function(
     dom.Element document, Map<dom.Node, int> nodeToIndex, Cause cause);
 
 class Html extends StatefulWidget {
-  /// The `Html` widget takes HTML as input and displays a RichText
+  /// The `Html` widget takes HTML as input and displays a StyledElementWidget
   /// tree of the parsed HTML content.
   ///
   /// **Attributes**

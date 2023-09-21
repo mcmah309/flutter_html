@@ -29,7 +29,7 @@ class VerticalAlignBuiltIn extends HtmlExtension {
         offset: Offset(0, _getVerticalOffset(context.styledElement!)),
         child: CssBoxWidget.withInlineSpanChildren(
           children: context.buildInlineSpanChildrenMemoized!,
-          style: context.styledElement!.style,
+          styledElement: context.styledElement!,
         ),
       ),
     );

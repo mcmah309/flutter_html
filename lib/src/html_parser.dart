@@ -179,7 +179,7 @@ class _HtmlParserState extends State<HtmlParser> {
   Widget build(BuildContext context) {
     //Rendering Step
     return CssBoxWidget.withInlineSpanChildren(
-      style: root.style,
+      styledElement: root,
       //TODO can we have buildTree return a list of InlineSpans rather than a single one.
       children: [buildTree(root, null)],
       shrinkWrap: widget.shrinkWrap,

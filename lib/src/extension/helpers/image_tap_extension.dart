@@ -60,7 +60,7 @@ class OnImageTapExtension extends ImageBuiltIn {
         return GestureDetector(
           child: CssBoxWidget.withInlineSpanChildren(
             children: children.values.toList(),
-            style: context.styledElement!.style,
+            styledElement: context.styledElement!,
           ),
           onTap: () {
             if (MultipleTapGestureDetector.of(buildContext) != null) {

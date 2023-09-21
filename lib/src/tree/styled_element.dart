@@ -7,6 +7,8 @@ import 'package:html/dom.dart' as dom;
 import 'package:html/src/query_selector.dart';
 import 'package:list_counter/list_counter.dart';
 
+import '../processing/Node_order.dart';
+
 /// A [StyledElement] applies a style to all of its children.
 class StyledElement {
   final String name;
@@ -51,6 +53,17 @@ class StyledElement {
       return node as dom.Element;
     }
     return null;
+  }
+
+  /// Inserts the element before, assumes the new element and its node have not been connected yet
+  void insertBefore(StyledElement element) {
+    assert(node.parent != null && element.parent == null);
+    assert(parent != null && element.parent == null);
+    node.parentNode!.insertBefore(element.node, node);
+    parent!.children.insert(parent!.children.indexOf(this), element);
+    element.parent = parent!;
+    NodeOrderProcessing.reIndexNodeToIndexMapWith(nodeToIndex, element.node);
+    assert(nodeToIndex[element.node]! + 1 == nodeToIndex[node]!);
   }
 
   @override

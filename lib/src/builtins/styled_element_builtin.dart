@@ -435,7 +435,7 @@ class StyledElementBuiltIn extends HtmlExtension {
           key: context.parser.key == null || context.styledElement == null
               ? null
               : AnchorKey.of(context.parser.key!, context.styledElement!),
-          style: context.styledElement!.style,
+          styledElement: context.styledElement!,
           shrinkWrap: context.parser.shrinkWrap,
           childIsReplaced: ["iframe", "img", "video", "audio"]
               .contains(context.styledElement!.name),

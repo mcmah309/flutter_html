@@ -29,6 +29,7 @@ class DetailsElementBuiltIn extends HtmlExtension {
     final children = childList.values;
 
     InlineSpan? firstChild = children.isNotEmpty ? children.first : null;
+    // details tag defaults to "Details" if no summary tag is present.
     return WidgetSpan(
       child: ExpansionTile(
           key: context.parser.key == null || context.styledElement == null
@@ -39,7 +40,7 @@ class DetailsElementBuiltIn extends HtmlExtension {
                   childList.keys.first.name == "summary"
               ? CssBoxWidget.withInlineSpanChildren(
                   children: firstChild == null ? [] : [firstChild],
-                  style: context.styledElement!.style,
+                  styledElement: context.styledElement!,
                 )
               : const Text("Details"),
           children: [
@@ -48,7 +49,7 @@ class DetailsElementBuiltIn extends HtmlExtension {
                       childList.keys.first.name == "summary"
                   ? children.skip(1).toList()
                   : children.toList(),
-              style: context.styledElement!.style,
+              styledElement: context.styledElement!,
             ),
           ]),
     );

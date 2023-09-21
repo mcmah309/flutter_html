@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_html/src/widgets/styled_element_widget.dart';
 import 'package:html/dom.dart' as dom;
 
 /// Handles the rendering of rp, rt, and ruby tags.
@@ -42,7 +43,7 @@ class RubyBuiltIn extends HtmlExtension {
 
   @override
   InlineSpan build(ExtensionContext context) {
-    StyledElement? node;
+    StyledElement? styledElement;
     List<Widget> widgets = <Widget>[];
     final rubySize = context.parser.style['rt']?.fontSize?.value ??
         max(9.0, context.styledElement!.style.fontSize!.value / 2);
@@ -58,8 +59,8 @@ class RubyBuiltIn extends HtmlExtension {
         children.add(element);
       }
     });
-    for (var c in children) {
-      if (c.name == "rt" && node != null) {
+    for (var childStyledElement in children) {
+      if (childStyledElement.name == "rt" && styledElement != null) {
         final widget = Stack(
           alignment: Alignment.center,
           children: <Widget>[
@@ -69,10 +70,10 @@ class RubyBuiltIn extends HtmlExtension {
                 child: Transform(
                   transform: Matrix4.translationValues(0, -(rubyYPos), 0),
                   child: CssBoxWidget(
-                    style: c.style,
+                    styledElement: childStyledElement,
                     child: Text(
-                      c.element!.innerHtml,
-                      style: c.style
+                      childStyledElement.element!.innerHtml,
+                      style: childStyledElement.style
                           .generateTextStyle()
                           .copyWith(fontSize: rubySize),
                     ),
@@ -81,14 +82,16 @@ class RubyBuiltIn extends HtmlExtension {
               ),
             ),
             CssBoxWidget(
-              style: context.styledElement!.style,
-              child: node is TextContentElement
-                  ? Text(
-                      node.text?.trim() ?? "",
+              styledElement: context.styledElement!,
+              child: styledElement is TextContentElement
+                  ? StyledElementWidget(
+                      styledElement,
+                      TextSpan(text: styledElement.text?.trim() ?? ""),
                       style: context.styledElement!.style.generateTextStyle(),
                     )
-                  : RichText(
-                      text: const TextSpan(
+                  : StyledElementWidget(
+                      styledElement,
+                      const TextSpan(
                           text:
                               '!rc!')), // TODO was context.parser.parseTree(context, node)),
             ),
@@ -96,7 +99,7 @@ class RubyBuiltIn extends HtmlExtension {
         );
         widgets.add(widget);
       } else {
-        node = c;
+        styledElement = childStyledElement;
       }
     }
 

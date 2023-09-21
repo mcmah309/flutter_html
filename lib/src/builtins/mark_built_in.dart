@@ -98,7 +98,7 @@ class HighlightBuiltIn extends HtmlExtension {
   InlineSpan build(ExtensionContext context) {
     String? range = context.element!.attributes["color"];
     // TODO replace with custom span that creates a floating widget
-    double lineSpacing = context.styledElement!.style.lineHeight!.size!;
+    //double lineSpacing = context.styledElement!.style.lineHeight!.size!;
     double letterHeight = context.styledElement!.style.fontSize!.value;
     double markerWidth = context.styledElement!.style.fontSize!.value;
     double markerHeight = markerWidth;

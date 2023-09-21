@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_html/src/tree/styled_element.dart';
-import 'package:html/dom.dart' as dom;
 
 /// Key used for hashing and retrieving
 class _BaseAnchorKey extends GlobalKey {
@@ -17,11 +16,13 @@ class _BaseAnchorKey extends GlobalKey {
     return _BaseAnchorKey._(parentKey, id);
   }
 
-  AnchorKey downCast(dom.Node node) => AnchorKey._(parentKey, id, node);
+  AnchorKey downCast(StyledElement element) =>
+      AnchorKey._(parentKey, id, element);
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
+      // runtime check left out on purpose
       other is _BaseAnchorKey && parentKey == other.parentKey && id == other.id;
 
   @override
@@ -32,9 +33,9 @@ class _BaseAnchorKey extends GlobalKey {
 class AnchorKey extends _BaseAnchorKey {
   static final Set<AnchorKey> _registry = <AnchorKey>{};
 
-  final dom.Node node;
+  final StyledElement element;
 
-  const AnchorKey._(Key parentKey, String id, this.node)
+  const AnchorKey._(Key parentKey, String id, this.element)
       : super._(parentKey, id);
 
   /// Returns a unique [AnchorKey]. i.e. The anchor key if not already created.
@@ -45,7 +46,7 @@ class AnchorKey extends _BaseAnchorKey {
       // Invalid id or already created a key with this id: silently ignore
       return null;
     }
-    final key = baseKey.downCast(styledElement.node);
+    final key = baseKey.downCast(styledElement);
     _registry.add(key);
     return key;
   }
@@ -62,6 +63,18 @@ class AnchorKey extends _BaseAnchorKey {
   static void resetRegistry() {
     _registry.clear();
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AnchorKey &&
+          runtimeType == other.runtimeType &&
+          parentKey == other.parentKey &&
+          id == other.id &&
+          element == other.element;
+
+  @override
+  int get hashCode => parentKey.hashCode ^ id.hashCode;
 
   @override
   String toString() {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_html/src/processing/Node_order.dart';
 import 'package:flutter_html/src/style.dart';
 import 'package:flutter_html/src/tree/styled_element.dart';
 import 'package:html/dom.dart' as dom;
@@ -56,19 +55,26 @@ class TextContentElement extends ReplacedElement {
       assert(false);
       return [this];
     }
-    final text1 = node.text!.substring(0, start);
+    end ??= text!.length;
+    assert(start < end);
+    final String text1;
     final String text2;
-    final String? text3;
-    if (end == null) {
-      text2 = node.text!.substring(start);
-      text3 = null;
+    String? text3;
+    if (start == 0) {
+      if (end == text!.length) {
+        return [this];
+      } else {
+        text1 = node.text!.substring(0, end);
+        text2 = node.text!.substring(end);
+      }
     } else {
-      if (end < length) {
+      if (end == text!.length) {
+        text1 = node.text!.substring(0, start);
+        text2 = node.text!.substring(start);
+      } else {
+        text1 = node.text!.substring(0, start);
         text2 = node.text!.substring(start, end);
         text3 = node.text!.substring(end);
-      } else {
-        text2 = node.text!.substring(start, end);
-        text3 = null;
       }
     }
     final dom.Text newNodeBefore = dom.Text(text1);
@@ -86,17 +92,6 @@ class TextContentElement extends ReplacedElement {
       node.text = text3;
       return [newBeforeTextContentElement, newBeforeTextContentElement2, this];
     }
-  }
-
-  /// Inserts the element before, assumes the new element and its node have not been connected yet
-  void insertBefore(StyledElement element) {
-    assert(node.parent != null && element.parent == null);
-    assert(parent != null && element.parent == null);
-    node.parentNode!.insertBefore(element.node, node);
-    parent!.children.insert(parent!.children.indexOf(this), element);
-    element.parent = parent!;
-    NodeOrderProcessing.reIndexNodeToIndexMapWith(nodeToIndex, element.node);
-    assert(nodeToIndex[element.node]! + 1 == nodeToIndex[node]!);
   }
 
   /// Copies the current element, but without the parent
