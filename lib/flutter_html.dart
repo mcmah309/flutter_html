@@ -22,6 +22,7 @@ export 'package:flutter_html/src/tree/replaced_element.dart';
 export 'package:flutter_html/src/tree/styled_element.dart';
 //export css_box_widget for use in extensions.
 export 'package:flutter_html/src/widgets/css_box_widget.dart';
+export 'package:flutter_html/src/widgets/styled_element_widget.dart';
 
 typedef DocumentCallback = Function(
     dom.Element document, Map<dom.Node, int> nodeToIndex, Cause cause);
