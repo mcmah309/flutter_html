@@ -1,8 +1,8 @@
 import 'package:html/dom.dart' as dom;
 
-/// Creates a map of nodes to element index that can be useful when ordering.
-/// [double] is used over [int], since nodes may be added, if so just add "0.00000000001"
-/// to the last node index, to find the new element current index
+/// {@template nodeToIndex}
+/// Creates a map of nodes to node index in order. Can be useful when ordering.
+/// {@endtemplate}
 class NodeOrderProcessing {
   static Map<dom.Node, int> createNodeToIndexMap(dom.Node node) {
     _IntWrapper index = _IntWrapper(-1);

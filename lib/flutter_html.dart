@@ -160,7 +160,10 @@ class Html extends StatefulWidget {
 }
 
 class _HtmlState extends State<Html> {
+  /// Html tag element
   late dom.Element documentElement;
+
+  /// {@macro nodeToIndex}
   late Map<dom.Node, int> nodeToIndex;
 
   @override
