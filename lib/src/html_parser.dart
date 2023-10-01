@@ -2,6 +2,7 @@ import 'package:csslib/parser.dart' as css_parser;
 import 'package:csslib/visitor.dart' as css;
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_html/src/builtins/line_break_builtin.dart';
 import 'package:flutter_html/src/css_parser.dart';
 import 'package:flutter_html/src/processing/lists.dart';
 import 'package:flutter_html/src/processing/margins.dart';
@@ -64,8 +65,9 @@ class HtmlParser extends StatefulWidget {
     const RubyBuiltIn(),
     const DetailsElementBuiltIn(),
     const StyledElementBuiltIn(),
+    const HighlightBuiltIn(),
+    const LineBreakBuiltIn(),
     const TextBuiltIn(),
-    const HighlightBuiltIn()
   ];
 
   /// [parseHTML] converts a string of HTML to a DOM element using the dart `html` library.

@@ -3,54 +3,41 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_html/src/utils.dart';
 import 'package:html/dom.dart' as dom;
 
-/// Handles rendering of text nodes and <br> tags.
+/// Handles rendering of [dom.Text] nodes.
 class TextBuiltIn extends HtmlExtension {
   const TextBuiltIn();
 
   @override
   bool matches(ExtensionContext context) {
-    return supportedTags.contains(context.elementName) ||
-        context.node is dom.Text;
+    return context.node is dom.Text;
   }
 
   @override
-  Set<String> get supportedTags => {
-        "br",
-      };
+  Set<String> get supportedTags => {};
 
   @override
-  StyledElement prepare(
-      ExtensionContext context, List<StyledElement> children) {
-    if (context.elementName == "br") {
-      return LinebreakContentElement(
-        style: Style(),
-        node: context.node,
-        nodeToIndex: context.nodeToIndex);
-    }
-
-    if (context.node is dom.Text) {
-      return TextContentElement(
-        style: Style(),
-        element: context.node.parent,
-        node: context.node as dom.Text,
-        nodeToIndex: context.nodeToIndex,
-      );
-    }
-
-    return EmptyContentElement(
-      node: context.node,
+  StyledElement prepare(ExtensionContext context, List<StyledElement> children) {
+    // if(context.node is! dom.Text) {
+    //   assert(false);
+    //   return EmptyContentElement(
+    //     node: context.node,
+    //     nodeToIndex: context.nodeToIndex,
+    //   );
+    // }
+    return TextContentElement(
+      style: Style(),
+      element: context.node.parent,
+      node: context.node as dom.Text,
       nodeToIndex: context.nodeToIndex,
     );
   }
 
   @override
   InlineSpan build(ExtensionContext context) {
-    if (context.styledElement is LinebreakContentElement) {
-      return TextSpan(
-        text: '\n',
-        style: context.styledElement!.style.generateTextStyle(),
-      );
-    }
+    // if (context.styledElement! is EmptyContentElement) {
+    //   assert(false);
+    //   return const TextSpan();
+    // }
 
     final element = context.styledElement! as TextContentElement;
     return TextSpan(

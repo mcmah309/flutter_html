@@ -38,8 +38,7 @@ class MultipleTapGestureDetector extends InheritedWidget {
   }) : super(key: key, child: child);
 
   static MultipleTapGestureDetector? of(BuildContext context) {
-    return context
-        .dependOnInheritedWidgetOfExactType<MultipleTapGestureDetector>();
+    return context.dependOnInheritedWidgetOfExactType<MultipleTapGestureDetector>();
   }
 
   @override
@@ -60,8 +59,9 @@ class CustomBorderSide {
 
 extension TextTransformUtil on String? {
   String? transformed(TextTransform? transform) {
-    if (this == null) return null;
-    if (transform == TextTransform.uppercase) {
+    if (this == null) {
+      return null;
+    } else if (transform == TextTransform.uppercase) {
       return this!.toUpperCase();
     } else if (transform == TextTransform.lowercase) {
       return this!.toLowerCase();
