@@ -39,9 +39,10 @@ class TextBuiltIn extends HtmlExtension {
     // }
     final element = context.styledElement! as TextContentElement;
     // Blank text elements are kept to follow html rules where in some situations spaces between elements can determine
-    // how they are organized on the screen, but do not appear as elements. This is highly tied to the obelisk
-    // implementation, since whitespace processing is done before. If this was not the case, we would need to check
-    // for any number of white space characters.
+    // how they are organized on the screen, but do not appear as elements themselves. These [Text] nodes are
+    // skipped when counting characters as well. This is highly tied
+    // to the obelisk implementation, since whitespace processing is done before. If this was not the case, we would
+    // need to check for any number of white space characters.
     if (element.text == " ") {
       return const TextSpan();
     }
