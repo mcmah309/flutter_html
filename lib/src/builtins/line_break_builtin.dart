@@ -22,11 +22,14 @@ class LineBreakBuiltIn extends HtmlExtension {
 
   @override
   InlineSpan build(ExtensionContext context) {
-    return const WidgetSpan(
-        child: Row(children: [
-      Expanded(
-        child: SizedBox(),
-      )
-    ]));
+    // return const WidgetSpan(
+    //     child: Row(children: [
+    //   Expanded(
+    //     child: SizedBox(),
+    //   )
+    // ]));
+    // Note: "\n" will appear if selection is converted to plaintext, but not character count/offset. Otherwise, we
+    // would have to use widget like above, but this in its current state creates line breaks that are too long.
+    return TextSpan(text: "\n");
   }
 }

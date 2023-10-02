@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_html/src/utils.dart';
 import 'package:html/dom.dart' as dom;
 
 /// Handles rendering of [dom.Text] nodes.
@@ -38,11 +37,17 @@ class TextBuiltIn extends HtmlExtension {
     //   assert(false);
     //   return const TextSpan();
     // }
-
     final element = context.styledElement! as TextContentElement;
+    // Blank text elements are kept to follow html rules where in some situations spaces between elements can determine
+    // how they are organized on the screen, but do not appear as elements. This is highly tied to the obelisk
+    // implementation, since whitespace processing is done before. If this was not the case, we would need to check
+    // for any number of white space characters.
+    if (element.text == " ") {
+      return const TextSpan();
+    }
     return TextSpan(
       style: element.style.generateTextStyle(),
-      text: element.text!.transformed(element.style.textTransform),
+      text: element.createTextForSpanWidget(),
     );
   }
 }

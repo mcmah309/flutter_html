@@ -57,20 +57,19 @@ class CustomBorderSide {
   BorderStyle style;
 }
 
-extension TextTransformUtil on String? {
-  String? transformed(TextTransform? transform) {
-    if (this == null) {
-      return null;
-    } else if (transform == TextTransform.uppercase) {
-      return this!.toUpperCase();
-    } else if (transform == TextTransform.lowercase) {
-      return this!.toLowerCase();
-    } else if (transform == TextTransform.capitalize) {
+/// Used to transform text of an html element to the proper result
+String? transformed(String string, TextTransform transform) {
+  String transformedText;
+  if (transform == TextTransform.uppercase) {
+    transformedText = string.toUpperCase();
+  } else if (transform == TextTransform.lowercase) {
+    transformedText = string.toLowerCase();
+  } else if (transform == TextTransform.capitalize) {
       final stringBuffer = StringBuffer();
 
       var capitalizeNext = true;
-      for (final letter in this!.toLowerCase().codeUnits) {
-        // UTF-16: A-Z => 65-90, a-z => 97-122.
+    for (final letter in string.toLowerCase().codeUnits) {
+      // UTF-16: A-Z => 65-90, a-z => 97-122.
         if (capitalizeNext && letter >= 97 && letter <= 122) {
           stringBuffer.writeCharCode(letter - 32);
           capitalizeNext = false;
@@ -81,9 +80,10 @@ extension TextTransformUtil on String? {
         }
       }
 
-      return stringBuffer.toString();
-    } else {
-      return this;
-    }
+    transformedText = stringBuffer.toString();
+  } else {
+    transformedText = string;
   }
+  assert(string.length == transformedText.length, "Should not alter the text of text node");
+  return transformedText;
 }
