@@ -21,7 +21,7 @@ class ExtensionContext {
 
   final Map<dom.Node, int> nodeToIndex;
 
-  /// See [resetAllProcessing] for use.
+  /// See [resetProcessing] for use.
   bool willReprocess = false;
 
   /// Returns the reference to the Html element if this Html node represents
@@ -111,10 +111,18 @@ class ExtensionContext {
   final BuildChildrenCallback? _callbackToBuildChildren;
   Map<StyledElement, InlineSpan>? _builtChildren;
 
+  ExtensionContext getRoot() {
+    ExtensionContext root = this;
+    while (root.parent != null) {
+      root = root.parent!;
+    }
+    return root;
+  }
+
   /// Removes the built children and disconnects them from the tree and sets [willReprocess] to true.
   /// This will force [HtmlParser#_buildTreeRecursive] (where [_callbackToBuildChildren] is) to reprocess all steps for this
   /// element and below on rebuild, since [_builtChildren] will be null for [buildChildrenMapMemoized]
-  void resetAllProcessing() {
+  void resetProcessing() {
     if (_builtChildren != null) {
       for (final entry in _builtChildren!.entries.toList(growable: false)) {
         _disconnect(entry.key);

@@ -72,7 +72,9 @@ class InteractiveElementBuiltIn extends HtmlExtension {
         child: MultipleTapGestureDetector(
           onTap: onTap,
           child: GestureDetector(
-            key: AnchorKey.of(context.parser.key, context.styledElement),
+            key: context.parser.key == null || context.styledElement == null
+                ? null
+                : AnchorKey.of(context.parser.key!, context.styledElement!),
             onTap: onTap,
             child: (childSpan as WidgetSpan).child,
           ),

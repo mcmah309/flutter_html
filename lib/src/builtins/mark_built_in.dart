@@ -14,7 +14,7 @@ class HighlightBuiltIn extends HtmlExtension {
 
   @override
   Set<String> get supportedTags => {
-        "o-highlight",
+        "o-mark",
       };
 
   /// Traverse each element and add highlighting for the range, if the range
@@ -98,7 +98,28 @@ class HighlightBuiltIn extends HtmlExtension {
   InlineSpan build(ExtensionContext context) {
     String? range = context.element!.attributes["color"];
     // TODO replace with custom span that creates a floating widget
-    return const TextSpan();
+    //double lineSpacing = context.styledElement!.style.lineHeight!.size!;
+    double letterHeight = context.styledElement!.style.fontSize!.value;
+    double markerWidth = context.styledElement!.style.fontSize!.value;
+    double markerHeight = markerWidth;
+    return WidgetSpan(
+        child: Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          top: -(letterHeight + markerHeight / 2),
+          // position outside the stack
+          left: -markerWidth / 2,
+          child: Icon(
+            Icons.bookmark,
+            size: markerHeight,
+            color: const Color.fromARGB(255, 128, 0, 32), // burgundy
+            //shadows:  <Shadow>[Shadow(color: Colors.black, blurRadius: markerWidth/2), Shadow(color: Colors.white, blurRadius: markerWidth/2)]
+          ),
+        ),
+        const SizedBox.shrink()
+      ],
+    ));
   }
 }
 

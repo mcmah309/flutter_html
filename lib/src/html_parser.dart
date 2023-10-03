@@ -2,14 +2,7 @@ import 'package:csslib/parser.dart' as css_parser;
 import 'package:csslib/visitor.dart' as css;
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_html/src/builtins/details_element_builtin.dart';
-import 'package:flutter_html/src/builtins/highlight_built_in.dart';
-import 'package:flutter_html/src/builtins/image_builtin.dart';
-import 'package:flutter_html/src/builtins/interactive_element_builtin.dart';
-import 'package:flutter_html/src/builtins/ruby_builtin.dart';
-import 'package:flutter_html/src/builtins/styled_element_builtin.dart';
-import 'package:flutter_html/src/builtins/text_builtin.dart';
-import 'package:flutter_html/src/builtins/vertical_align_builtin.dart';
+import 'package:flutter_html/src/builtins/line_break_builtin.dart';
 import 'package:flutter_html/src/css_parser.dart';
 import 'package:flutter_html/src/processing/lists.dart';
 import 'package:flutter_html/src/processing/margins.dart';
@@ -72,8 +65,9 @@ class HtmlParser extends StatefulWidget {
     const RubyBuiltIn(),
     const DetailsElementBuiltIn(),
     const StyledElementBuiltIn(),
+    const HighlightBuiltIn(),
+    const LineBreakBuiltIn(),
     const TextBuiltIn(),
-    const HighlightBuiltIn()
   ];
 
   /// [parseHTML] converts a string of HTML to a DOM element using the dart `html` library.
@@ -90,7 +84,7 @@ class HtmlParser extends StatefulWidget {
           (String? url, Map<String, String> attributes, html.Element? element) {
         if (url?.startsWith("#") == true) {
           final anchorContext =
-              AnchorKey.forId(key, url!.substring(1))?.currentContext;
+              AnchorKey.getFor(key, url!.substring(1))?.currentContext;
           if (anchorContext != null) {
             Scrollable.ensureVisible(anchorContext);
           }
@@ -187,7 +181,7 @@ class _HtmlParserState extends State<HtmlParser> {
   Widget build(BuildContext context) {
     //Rendering Step
     return CssBoxWidget.withInlineSpanChildren(
-      style: root.style,
+      styledElement: root,
       //TODO can we have buildTree return a list of InlineSpans rather than a single one.
       children: [buildTree(root, null)],
       shrinkWrap: widget.shrinkWrap,

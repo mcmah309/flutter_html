@@ -57,18 +57,20 @@ class ImageBuiltIn extends HtmlExtension {
     final parsedWidth = double.tryParse(context.attributes["width"] ?? "");
     final parsedHeight = double.tryParse(context.attributes["height"] ?? "");
 
+    Width? width = parsedWidth != null ? Width(parsedWidth) : null;
+    Height? height = parsedHeight != null ? Height(parsedHeight) : null;
     return ImageElement(
       name: context.elementName,
       parent: context.styledElement?.parent,
       children: children,
-      style: Style(),
+      style: Style(width: width, height: height),
       node: context.node,
       nodeToIndex: context.nodeToIndex,
       elementId: context.id,
       src: context.attributes["src"]!,
       alt: context.attributes["alt"],
-      width: parsedWidth != null ? Width(parsedWidth) : null,
-      height: parsedHeight != null ? Height(parsedHeight) : null,
+      width: width,
+      height: height,
     );
   }
 
@@ -76,18 +78,18 @@ class ImageBuiltIn extends HtmlExtension {
   InlineSpan build(ExtensionContext context) {
     final element = context.styledElement as ImageElement;
 
-    final imageStyle = Style(
-      width: element.width,
-      height: element.height,
-    ).merge(context.styledElement!.style);
+    // final imageStyle = Style(
+    //   width: element.width,
+    //   height: element.height,
+    // ).merge(context.styledElement!.style);
 
     late Widget child;
     if (_matchesBase64Image(context)) {
-      child = _base64ImageRender(context, imageStyle);
+      child = _base64ImageRender(context, element);
     } else if (_matchesAssetImage(context)) {
-      child = _assetImageRender(context, imageStyle);
+      child = _assetImageRender(context, element);
     } else if (_matchesNetworkImage(context)) {
-      child = _networkImageRender(context, imageStyle);
+      child = _networkImageRender(context, element);
     } else {
       // Our matcher went a little overboard and matched
       // something we can't render
@@ -96,7 +98,7 @@ class ImageBuiltIn extends HtmlExtension {
 
     return WidgetSpan(
       child: CssBoxWidget(
-        style: imageStyle,
+        styledElement: context.styledElement!,
         childIsReplaced: true,
         child: child,
       ),
@@ -155,14 +157,14 @@ class ImageBuiltIn extends HtmlExtension {
             src.path.endsWithAnyFileExtension(fileExtensions!));
   }
 
-  Widget _base64ImageRender(ExtensionContext context, Style imageStyle) {
+  Widget _base64ImageRender(ExtensionContext context, StyledElement element) {
     final element = context.styledElement as ImageElement;
     final decodedImage = base64.decode(element.src.split("base64,")[1].trim());
 
     return Image.memory(
       decodedImage,
-      width: imageStyle.width?.value,
-      height: imageStyle.height?.value,
+      width: element.style.width?.value,
+      height: element.style.height?.value,
       fit: BoxFit.fill,
       errorBuilder: (ctx, error, stackTrace) {
         return Text(
@@ -173,14 +175,15 @@ class ImageBuiltIn extends HtmlExtension {
     );
   }
 
-  Widget _assetImageRender(ExtensionContext context, Style imageStyle) {
+  Widget _assetImageRender(
+      ExtensionContext context, StyledElement styledElement) {
     final element = context.styledElement as ImageElement;
     final assetPath = element.src.replaceFirst('asset:', '');
 
     return Image.asset(
       assetPath,
-      width: imageStyle.width?.value,
-      height: imageStyle.height?.value,
+      width: styledElement.style.width?.value,
+      height: styledElement.style.height?.value,
       fit: BoxFit.fill,
       bundle: assetBundle,
       package: assetPackage,
@@ -193,16 +196,17 @@ class ImageBuiltIn extends HtmlExtension {
     );
   }
 
-  Widget _networkImageRender(ExtensionContext context, Style imageStyle) {
+  Widget _networkImageRender(
+      ExtensionContext context, StyledElement styledElement) {
     final element = context.styledElement as ImageElement;
 
     return CssBoxWidget(
-      style: imageStyle,
+      styledElement: styledElement,
       childIsReplaced: true,
       child: Image.network(
         element.src,
-        width: imageStyle.width?.value,
-        height: imageStyle.height?.value,
+        width: styledElement.style.width?.value,
+        height: styledElement.style.height?.value,
         fit: BoxFit.fill,
         headers: networkHeaders,
         errorBuilder: (ctx, error, stackTrace) {

@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_html/src/css_box_widget.dart';
 import 'package:flutter_html/src/extension/html_extension.dart';
 import 'package:flutter_html/src/style.dart';
 import 'package:flutter_html/src/tree/styled_element.dart';
+import 'package:flutter_html/src/widgets/css_box_widget.dart';
 import 'package:html/dom.dart' as html;
 
 class TagWrapExtension extends HtmlExtension {
@@ -64,7 +64,7 @@ class TagWrapExtension extends HtmlExtension {
   InlineSpan build(ExtensionContext context) {
     final child = CssBoxWidget.withInlineSpanChildren(
       children: context.buildInlineSpanChildrenMemoized!,
-      style: context.style!,
+      styledElement: context.styledElement!,
     );
 
     return WidgetSpan(

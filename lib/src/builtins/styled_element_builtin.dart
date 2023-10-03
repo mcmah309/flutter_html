@@ -1,11 +1,11 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/src/anchor.dart';
-import 'package:flutter_html/src/css_box_widget.dart';
 import 'package:flutter_html/src/css_parser.dart';
 import 'package:flutter_html/src/extension/html_extension.dart';
 import 'package:flutter_html/src/style.dart';
 import 'package:flutter_html/src/tree/styled_element.dart';
+import 'package:flutter_html/src/widgets/css_box_widget.dart';
 import 'package:html/dom.dart' as dom;
 
 class StyledElementBuiltIn extends HtmlExtension {
@@ -432,8 +432,10 @@ class StyledElementBuiltIn extends HtmlExtension {
         alignment: PlaceholderAlignment.baseline,
         baseline: TextBaseline.alphabetic,
         child: CssBoxWidget.withInlineSpanChildren(
-          key: AnchorKey.of(context.parser.key, context.styledElement),
-          style: context.styledElement!.style,
+          key: context.parser.key == null || context.styledElement == null
+              ? null
+              : AnchorKey.of(context.parser.key!, context.styledElement!),
+          styledElement: context.styledElement!,
           shrinkWrap: context.parser.shrinkWrap,
           childIsReplaced: ["iframe", "img", "video", "audio"]
               .contains(context.styledElement!.name),

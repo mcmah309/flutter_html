@@ -9,8 +9,8 @@ import 'package:html/dom.dart' as dom;
 
 //export src for advanced custom render uses (e.g. casting context.tree)
 export 'package:flutter_html/src/anchor.dart';
-//export css_box_widget for use in extensions.
-export 'package:flutter_html/src/css_box_widget.dart';
+// expose for to extend for custom marking
+export 'package:flutter_html/src/builtins/builtins.dart';
 //export extension api
 export 'package:flutter_html/src/extension/html_extension.dart';
 //export render context api
@@ -20,9 +20,15 @@ export 'package:flutter_html/src/style.dart';
 export 'package:flutter_html/src/tree/interactable_element.dart';
 export 'package:flutter_html/src/tree/replaced_element.dart';
 export 'package:flutter_html/src/tree/styled_element.dart';
+//export css_box_widget for use in extensions.
+export 'package:flutter_html/src/widgets/css_box_widget.dart';
+export 'package:flutter_html/src/widgets/styled_element_widget.dart';
+
+typedef DocumentCallback = Function(
+    dom.Element document, Map<dom.Node, int> nodeToIndex, Cause cause);
 
 class Html extends StatefulWidget {
-  /// The `Html` widget takes HTML as input and displays a RichText
+  /// The `Html` widget takes HTML as input and displays a StyledElementWidget
   /// tree of the parsed HTML content.
   ///
   /// **Attributes**
@@ -59,8 +65,8 @@ class Html extends StatefulWidget {
     this.onlyRenderTheseTags,
     this.doNotRenderTheseTags,
     Map<String, Style>? style,
-  })
-      : documentElement = null,
+    this.documentCallback,
+  })  : documentElement = null,
         extensions = extensions ?? [],
         style = style ?? {},
         assert(data != null),
@@ -79,6 +85,7 @@ class Html extends StatefulWidget {
     this.doNotRenderTheseTags,
     this.onlyRenderTheseTags,
     this.style = const {},
+    this.documentCallback,
   })  : extensions = extensions ?? [],
         data = null,
         assert(document != null),
@@ -98,6 +105,7 @@ class Html extends StatefulWidget {
     this.doNotRenderTheseTags,
     this.onlyRenderTheseTags,
     this.style = const {},
+    this.documentCallback,
   })  : extensions = extensions ?? [],
         data = null,
         assert(documentElement != null),
@@ -144,12 +152,18 @@ class Html extends StatefulWidget {
   /// An API that allows you to override the default style for any HTML element
   final Map<String, Style> style;
 
+  /// Called on init and whenever the document changes.
+  final DocumentCallback? documentCallback;
+
   @override
   State<StatefulWidget> createState() => _HtmlState();
 }
 
 class _HtmlState extends State<Html> {
+  /// Html tag element
   late dom.Element documentElement;
+
+  /// {@macro nodeToIndex}
   late Map<dom.Node, int> nodeToIndex;
 
   @override
@@ -159,6 +173,9 @@ class _HtmlState extends State<Html> {
         ? HtmlParser.parseHTML(widget.data!)
         : widget.documentElement!;
     nodeToIndex = NodeOrderProcessing.createNodeToIndexMap(documentElement);
+    if (widget.documentCallback != null) {
+      widget.documentCallback!(documentElement, nodeToIndex, Cause.init);
+    }
   }
 
   @override
@@ -171,6 +188,10 @@ class _HtmlState extends State<Html> {
           : widget.documentElement!;
       nodeToIndex.clear();
       nodeToIndex = NodeOrderProcessing.createNodeToIndexMap(documentElement);
+      if (widget.documentCallback != null) {
+        widget.documentCallback!(
+            documentElement, nodeToIndex, Cause.widgetChange);
+      }
     }
   }
 
@@ -190,4 +211,9 @@ class _HtmlState extends State<Html> {
       onlyRenderTheseTags: widget.onlyRenderTheseTags,
     );
   }
+}
+
+enum Cause {
+  init,
+  widgetChange,
 }

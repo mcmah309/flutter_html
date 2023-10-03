@@ -3,13 +3,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_html/src/widgets/styled_element_widget.dart';
 
 class CssBoxWidget extends StatelessWidget {
   const CssBoxWidget({
     super.key,
     required this.child,
-    required this.style,
-    this.textDirection,
+      required this.styledElement,
+      this.textDirection,
     this.childIsReplaced = false,
     this.shrinkWrap = false,
     this.top = false,
@@ -19,21 +20,24 @@ class CssBoxWidget extends StatelessWidget {
   CssBoxWidget.withInlineSpanChildren(
       {super.key,
       required List<InlineSpan> children,
-      required this.style,
+      required this.styledElement,
       this.textDirection,
       this.childIsReplaced = false,
       this.shrinkWrap = false,
       this.top = false,
       this.onSelectionEvent})
-      : child = _generateWidgetChild(children, style, onSelectionEvent);
+      : child = _generateWidgetChild(children, styledElement, onSelectionEvent);
 
   /// The child to be rendered within the CSS Box.
   final Widget child;
 
-  /// The style to use to compute this box's margins/padding/box decoration/width/height/etc.
-  ///
+  /// The style of this [StyledElement] to use to compute this box's
+  /// margins/padding/box decoration/width/height/etc.
   /// Note that this style will only apply to this box, and will not cascade to its child.
-  final Style style;
+  ///
+  /// The [StyledElement] is also used as a marker to identify where the widget
+  /// came from in the html document. Ex: Traversing the Widget Element tree.
+  final StyledElement styledElement;
 
   /// Sets the direction the text of this widget should flow. If unset or null,
   /// the nearest Directionality ancestor is used as a default. If that cannot
@@ -56,29 +60,32 @@ class CssBoxWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final markerBox = style.listStylePosition == ListStylePosition.outside
-        ? _generateMarkerBoxSpan(style)
-        : null;
+    final markerBox =
+        styledElement.style.listStylePosition == ListStylePosition.outside
+            ? _generateMarkerBoxSpan(styledElement)
+            : null;
 
     final direction = _checkTextDirection(context, textDirection);
-    final padding = style.padding?.resolve(direction);
+    final padding = styledElement.style.padding?.resolve(direction);
 
     return _CSSBoxRenderer(
-      width: style.width ?? Width.auto(),
-      height: style.height ?? Height.auto(),
+      width: styledElement.style.width ?? Width.auto(),
+      height: styledElement.style.height ?? Height.auto(),
       paddingSize: padding?.collapsedSize ?? Size.zero,
-      borderSize: style.border?.dimensions.collapsedSize ?? Size.zero,
-      margins: style.margin ?? Margins.zero,
-      display: style.display ?? Display.inline,
+      borderSize:
+          styledElement.style.border?.dimensions.collapsedSize ?? Size.zero,
+      margins: styledElement.style.margin ?? Margins.zero,
+      display: styledElement.style.display ?? Display.inline,
       childIsReplaced: childIsReplaced,
-      emValue: _calculateEmValue(style, context),
+      emValue: _calculateEmValue(styledElement.style, context),
       textDirection: direction,
       shrinkWrap: shrinkWrap,
       children: [
         Container(
           decoration: BoxDecoration(
-            border: style.border,
-            color: style.backgroundColor, //Colors the padding and content boxes
+            border: styledElement.style.border,
+            color: styledElement
+                .style.backgroundColor, //Colors the padding and content boxes
           ),
           width: _shouldExpandToFillBlock() ? double.infinity : null,
           padding: padding,
@@ -96,49 +103,54 @@ class CssBoxWidget extends StatelessWidget {
 
   /// Takes a list of InlineSpan children and generates a Text.rich Widget
   /// containing those children.
-  static Widget _generateWidgetChild(List<InlineSpan> children, Style style,
-      SelectionEventCallback? onSelectionEvent) {
+  static Widget _generateWidgetChild(List<InlineSpan> children,
+      StyledElement styledElement, SelectionEventCallback? onSelectionEvent) {
     if (children.isEmpty) {
       return Container();
     }
 
     // Generate an inline marker box if the list-style-position is set to
     // inside. Otherwise the marker box will be added elsewhere.
-    if (style.listStylePosition == ListStylePosition.inside) {
-      final inlineMarkerBox = _generateMarkerBoxSpan(style);
+    if (styledElement.style.listStylePosition == ListStylePosition.inside) {
+      final inlineMarkerBox = _generateMarkerBoxSpan(styledElement);
       if (inlineMarkerBox != null) {
         children.insert(0, inlineMarkerBox);
       }
     }
 
-    return Text.rich(
+    return StyledElementWidget(
+      styledElement,
       TextSpan(
-        style: style.generateTextStyle(),
+        style: styledElement.style.generateTextStyle(),
         children: children,
       ),
-      maxLines: style.maxLines,
-      overflow: style.textOverflow ?? TextOverflow.clip,
-      textAlign: style.textAlign ?? TextAlign.start,
-      textDirection: style.direction,
+      maxLines: styledElement.style.maxLines,
+      overflow: styledElement.style.textOverflow ?? TextOverflow.clip,
+      textAlign: styledElement.style.textAlign ?? TextAlign.start,
+      textDirection: styledElement.style.direction,
       onSelectionEvent: onSelectionEvent,
     );
   }
 
-  static InlineSpan? _generateMarkerBoxSpan(Style style) {
-    if (style.display == Display.listItem) {
+  static InlineSpan? _generateMarkerBoxSpan(StyledElement styledElement) {
+    if (styledElement.style.display == Display.listItem) {
+      ;
       // First handle listStyleImage
-      if (style.listStyleImage != null) {
+      if (styledElement.style.listStyleImage != null) {
         return WidgetSpan(
           alignment: PlaceholderAlignment.middle,
           child: Image.network(
-            style.listStyleImage!.uriText,
+            styledElement.style.listStyleImage!.uriText,
             errorBuilder: (_, __, ___) {
-              if (style.marker?.content.replacementContent?.isNotEmpty ??
+              if (styledElement
+                      .style.marker?.content.replacementContent?.isNotEmpty ??
                   false) {
                 return Text.rich(
                   TextSpan(
-                    text: style.marker!.content.replacementContent!,
-                    style: style.marker!.style?.generateTextStyle(),
+                    text:
+                        styledElement.style.marker!.content.replacementContent!,
+                    style:
+                        styledElement.style.marker!.style?.generateTextStyle(),
                   ),
                 );
               }
@@ -150,10 +162,11 @@ class CssBoxWidget extends StatelessWidget {
       }
 
       // Display list marker with given style
-      if (style.marker?.content.replacementContent?.isNotEmpty ?? false) {
+      if (styledElement.style.marker?.content.replacementContent?.isNotEmpty ??
+          false) {
         return TextSpan(
-          text: style.marker!.content.replacementContent!,
-          style: style.marker!.style?.generateTextStyle(),
+          text: styledElement.style.marker!.content.replacementContent!,
+          style: styledElement.style.marker!.style?.generateTextStyle(),
         );
       }
     }
@@ -165,8 +178,8 @@ class CssBoxWidget extends StatelessWidget {
   /// width available to it or if it should just let its inner content
   /// determine the content-box's width.
   bool _shouldExpandToFillBlock() {
-    return (style.display == Display.block ||
-            style.display == Display.listItem) &&
+    return (styledElement.style.display == Display.block ||
+            styledElement.style.display == Display.listItem) &&
         !childIsReplaced &&
         !shrinkWrap;
   }
