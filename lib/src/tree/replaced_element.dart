@@ -61,7 +61,7 @@ class TextContentElement extends ReplacedElement {
     final String text2;
     String? text3;
     if (start == 0) {
-      if (end == text!.length) {
+      if (end == text!.length || end == 0) {
         return [this];
       } else {
         text1 = node.text!.substring(0, end);

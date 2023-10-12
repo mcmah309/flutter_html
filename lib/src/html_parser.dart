@@ -65,7 +65,7 @@ class HtmlParser extends StatefulWidget {
     const RubyBuiltIn(),
     const DetailsElementBuiltIn(),
     const StyledElementBuiltIn(),
-    const HighlightBuiltIn(),
+    const MarkBuiltIn(),
     const LineBreakBuiltIn(),
     const TextBuiltIn(),
   ];

@@ -20,6 +20,12 @@ dependencies:
   # plugin to manage lists and counting in a variety of styles
   list_counter: ^1.0.2
 
+  flutter_tools:
+    path: ../flutter_tools
+
+  dart_tools:
+    path: ../dart_tools
+
   flutter:
     sdk: flutter
 

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:html/dom.dart' as dom;
 
-/// Adds Highlighting to the to the Text elements for the specified range and color
-class HighlightBuiltIn extends HtmlExtension {
-  const HighlightBuiltIn();
+/// Adds Mark to the to the Text elements for the specified range and color. A mark consists of highlighting and
+/// adding a comment annotation widget
+class MarkBuiltIn extends HtmlExtension {
+  const MarkBuiltIn();
 
   static const defaultHighlightColor = Color.fromARGB(150, 255, 229, 127);
 
@@ -70,9 +72,16 @@ class HighlightBuiltIn extends HtmlExtension {
   void _traverseAndAddStyleDownInclusive(StyledElement element, Style style,
       _IntWrapper characterCount, int skip) {
     if (characterCount.val > 0) {
+      assert((element.node is dom.Text && element is TextContentElement) || (element.node is! dom.Text && element is!
+      TextContentElement), "The only Text nodes and TextContentElements should only be paired together");
       if (element is TextContentElement) {
-        int length = element.text?.length ?? 0;
-        if (length > characterCount.val) {
+        String text = element.text;
+        int length = text.length;
+        // Single string non-empty elements are not counted. See [THE_HOLY_TRINITY.md] for more.
+        if(text == " "){
+          // Intentionally empty
+        }
+        else if (length > characterCount.val) {
           final splitElement = element.split(characterCount.val);
           assert(splitElement.length == 2);
           splitElement[0].style =
