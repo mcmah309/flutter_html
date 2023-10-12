@@ -129,6 +129,22 @@ class MarkBuiltIn extends HtmlExtension {
         const SizedBox.shrink()
       ],
     ));
+    // return WidgetSpan(
+    //   child: Stack(
+    //     clipBehavior: Clip.none,
+    //     children: [
+    //       Positioned(
+    //         top: -(letterHeight + markerHeight / 2),
+    //         left: -markerWidth / 2,
+    //         child: CustomPaint(
+    //           size: Size(markerHeight, markerHeight),
+    //           painter: CustomMarkerIconPainter(),
+    //         ),
+    //       ),
+    //       const SizedBox.shrink(),
+    //     ],
+    //   ),
+    // );
   }
 }
 
@@ -137,3 +153,25 @@ class _IntWrapper {
 
   int val;
 }
+
+// class CustomMarkerIconPainter extends CustomPainter {
+//   @override
+//   void paint(Canvas canvas, Size size) {
+//     final centerX = size.width / 2;
+//     final centerY = size.height / 2;
+//     final radius = size.width / 2;
+//
+//     // Define the paint properties (color, style, etc.)
+//     final paint = Paint()
+//       ..color = const Color.fromARGB(255, 128, 0, 32) // burgundy
+//       ..style = PaintingStyle.fill;
+//
+//     // Draw your custom marker icon
+//     canvas.drawCircle(Offset(centerX, centerY), radius, paint);
+//   }
+//
+//   @override
+//   bool shouldRepaint(CustomPainter oldDelegate) {
+//     return false; // In this example, the icon is static and doesn't change.
+//   }
+// }
