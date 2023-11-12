@@ -1,4 +1,3 @@
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_html/flutter_html.dart';
 
@@ -16,13 +15,13 @@ class StyledElementWidget extends Text {
     Locale? locale,
     bool? softWrap,
     TextOverflow? overflow,
-    TextScaler? textScaler,
+    //3.2
+    // TextScaler? textScaler,
     int? maxLines,
     String? semanticsLabel,
     TextWidthBasis? textWidthBasis,
     TextHeightBehavior? textHeightBehavior,
     Color? selectionColor,
-    SelectionEventCallback? onSelectionEvent,
   }) : super.rich(
           textSpan,
           key: key,
@@ -33,13 +32,12 @@ class StyledElementWidget extends Text {
           locale: locale,
           softWrap: softWrap,
           overflow: overflow,
-          textScaler: textScaler,
+          //textScaler: textScaler,
           maxLines: maxLines,
           semanticsLabel: semanticsLabel,
           textWidthBasis: textWidthBasis,
           textHeightBehavior: textHeightBehavior,
           selectionColor: selectionColor,
-          onSelectionEvent: onSelectionEvent,
         );
 
   StyledElement styledElement;

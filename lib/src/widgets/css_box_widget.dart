@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_html/src/widgets/styled_element_widget.dart';
 
 class CssBoxWidget extends StatelessWidget {
   const CssBoxWidget({
@@ -13,8 +12,7 @@ class CssBoxWidget extends StatelessWidget {
       this.textDirection,
     this.childIsReplaced = false,
     this.shrinkWrap = false,
-    this.top = false,
-    this.onSelectionEvent});
+      this.top = false});
 
   /// Generates a CSSBoxWidget that contains a list of InlineSpan children.
   CssBoxWidget.withInlineSpanChildren(
@@ -24,9 +22,8 @@ class CssBoxWidget extends StatelessWidget {
       this.textDirection,
       this.childIsReplaced = false,
       this.shrinkWrap = false,
-      this.top = false,
-      this.onSelectionEvent})
-      : child = _generateWidgetChild(children, styledElement, onSelectionEvent);
+      this.top = false})
+      : child = _generateWidgetChild(children, styledElement);
 
   /// The child to be rendered within the CSS Box.
   final Widget child;
@@ -54,9 +51,6 @@ class CssBoxWidget extends StatelessWidget {
 
   /// For the root widget, so textScaleFactor, etc are only applied once
   final bool top;
-
-  /// If provided, text will be have the following selection callback
-  final SelectionEventCallback? onSelectionEvent;
 
   @override
   Widget build(BuildContext context) {
@@ -103,8 +97,7 @@ class CssBoxWidget extends StatelessWidget {
 
   /// Takes a list of InlineSpan children and generates a Text.rich Widget
   /// containing those children.
-  static Widget _generateWidgetChild(List<InlineSpan> children,
-      StyledElement styledElement, SelectionEventCallback? onSelectionEvent) {
+  static Widget _generateWidgetChild(List<InlineSpan> children, StyledElement styledElement) {
     if (children.isEmpty) {
       return Container();
     }
@@ -128,7 +121,6 @@ class CssBoxWidget extends StatelessWidget {
       overflow: styledElement.style.textOverflow ?? TextOverflow.clip,
       textAlign: styledElement.style.textAlign ?? TextAlign.start,
       textDirection: styledElement.style.direction,
-      onSelectionEvent: onSelectionEvent,
     );
   }
 
