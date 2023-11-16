@@ -24,7 +24,7 @@ dependencies:
     path: ../flutter_tools
 
   dart_tools:
-    path: ../dart_tools
+    path: ../dart_tools/core
 
   flutter:
     sdk: flutter
