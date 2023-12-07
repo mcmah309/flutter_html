@@ -1,11 +1,10 @@
 library flutter_html;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_html/src/extension/html_extension.dart';
-import 'package:flutter_html/src/html_parser.dart';
 import 'package:flutter_html/src/processing/node_order.dart';
-import 'package:flutter_html/src/style.dart';
 import 'package:html/dom.dart' as dom;
+
+import 'flutter_html.dart';
 
 //export src for advanced custom render uses (e.g. casting context.tree)
 export 'package:flutter_html/src/anchor.dart';
@@ -57,6 +56,8 @@ class Html extends StatefulWidget {
     Key? key,
     GlobalKey? anchorKey,
     required this.data,
+    this.postPrepareTree,
+    this.postStyleTree,
     this.onLinkTap,
     this.onAnchorTap,
     List<HtmlExtension>? extensions,
@@ -77,6 +78,8 @@ class Html extends StatefulWidget {
     Key? key,
     GlobalKey? anchorKey,
     @required dom.Document? document,
+    this.postPrepareTree,
+    this.postStyleTree,
     this.onLinkTap,
     this.onAnchorTap,
     List<HtmlExtension>? extensions,
@@ -97,6 +100,8 @@ class Html extends StatefulWidget {
     Key? key,
     GlobalKey? anchorKey,
     @required this.documentElement,
+    this.postPrepareTree,
+    this.postStyleTree,
     this.onLinkTap,
     this.onAnchorTap,
     List<HtmlExtension>? extensions,
@@ -120,6 +125,12 @@ class Html extends StatefulWidget {
 
   /// The HTML data passed to the widget as a pre-processed [dom.Element]
   final dom.Element? documentElement;
+
+  /// Called after all tree preparing has been completed
+  final void Function(StyledElement)? postPrepareTree;
+
+  /// Called after all tree styling has been completed
+  final void Function(StyledElement)? postStyleTree;
 
   /// A function that defines what to do when a link is tapped
   final OnTap? onLinkTap;
@@ -152,7 +163,7 @@ class Html extends StatefulWidget {
   /// An API that allows you to override the default style for any HTML element
   final Map<String, Style> style;
 
-  /// Called on init and whenever the document changes.
+  /// Called on init and whenever the document changes as determined by [didUpdateWidget].
   final DocumentCallback? documentCallback;
 
   @override
@@ -201,6 +212,8 @@ class _HtmlState extends State<Html> {
       key: widget._anchorKey,
       htmlData: documentElement,
       nodeToIndex: nodeToIndex,
+      postPrepareTree: widget.postPrepareTree,
+      postStyleTree: widget.postStyleTree,
       onLinkTap: widget.onLinkTap,
       onAnchorTap: widget.onAnchorTap,
       onCssParseError: widget.onCssParseError,

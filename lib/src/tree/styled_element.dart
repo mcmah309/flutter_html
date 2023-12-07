@@ -66,6 +66,26 @@ class StyledElement {
     assert(nodeToIndex[element.node]! + 1 == nodeToIndex[node]!);
   }
 
+  /// Inserts the element before, does not touch the elements node
+  void insertBeforeDoNotConnectNode(StyledElement element) {
+    parent!.children.insert(parent!.children.indexOf(this), element);
+    element.parent = parent!;
+  }
+
+  /// Inserts the element after, does not touch the elements node
+  void insertAfterDoNotConnectNode(StyledElement element) {
+    parent!.children.insert(parent!.children.indexOf(this) + 1, element);
+    element.parent = parent!;
+  }
+
+  /// Disconnects this from the parent tree.
+  void disconnectFromParent() {
+    parent?.children.remove(this);
+    node.parent?.nodes.remove(node);
+    parent = null;
+    node.parentNode = null;
+  }
+
   @override
   String toString() {
     String selfData =

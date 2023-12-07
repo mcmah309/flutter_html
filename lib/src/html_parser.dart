@@ -28,6 +28,8 @@ class HtmlParser extends StatefulWidget {
 
   /// node to index of the node in the tree. Used for ordering. If you need to add a node see [NodeOrderProcessing.reIndexNodeToIndexMapWith]
   final Map<dom.Node, int> nodeToIndex;
+  final void Function(StyledElement)? postPrepareTree;
+  final void Function(StyledElement)? postStyleTree;
   final OnTap? onLinkTap;
   final OnTap? onAnchorTap;
   final OnCssParseError? onCssParseError;
@@ -43,6 +45,8 @@ class HtmlParser extends StatefulWidget {
     required super.key,
     required this.htmlData,
     required this.nodeToIndex,
+    required this.postPrepareTree,
+    required this.postStyleTree,
     required this.onLinkTap,
     required this.onAnchorTap,
     required this.onCssParseError,
@@ -165,10 +169,12 @@ class _HtmlParserState extends State<HtmlParser> {
   void prepareTree(StyledElement tree) {
     // Preparing Step
     prepareHtmlTree(tree);
+    widget.postPrepareTree?.call(tree);
 
     // Styling Step
     beforeStyleTree(tree, null);
     styleTree(tree);
+    widget.postStyleTree?.call(tree);
 
     // Processing Step
     beforeProcessTree(tree, null);

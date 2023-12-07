@@ -33,7 +33,10 @@ abstract class ReplacedElement extends StyledElement {
 
 /// [TextContentElement] is a [ContentElement] with plaintext as its content.
 class TextContentElement extends ReplacedElement {
-  String get text => node.text!;
+  String get text => node.text;
+
+  @override
+  dom.Text get node => super.node as dom.Text;
 
   TextContentElement({
     required Style style,
@@ -46,35 +49,31 @@ class TextContentElement extends ReplacedElement {
   /// tree. Returns the [TextContentElement]'s acted on.
   /// [start] inclusive, [end] exclusive
   List<TextContentElement> split(int start, [int? end]) {
-    if (text == null) {
-      assert(false);
-      return [this];
-    }
-    int length = text!.length;
+    int length = text.length;
     if (start >= length) {
       assert(false);
       return [this];
     }
-    end ??= text!.length;
+    end ??= text.length;
     assert(start < end);
     final String text1;
     final String text2;
     String? text3;
     if (start == 0) {
-      if (end == text!.length || end == 0) {
+      if (end == text.length || end == 0) {
         return [this];
       } else {
-        text1 = node.text!.substring(0, end);
-        text2 = node.text!.substring(end);
+        text1 = node.text.substring(0, end);
+        text2 = node.text.substring(end);
       }
     } else {
-      if (end == text!.length) {
-        text1 = node.text!.substring(0, start);
-        text2 = node.text!.substring(start);
+      if (end == text.length) {
+        text1 = node.text.substring(0, start);
+        text2 = node.text.substring(start);
       } else {
-        text1 = node.text!.substring(0, start);
-        text2 = node.text!.substring(start, end);
-        text3 = node.text!.substring(end);
+        text1 = node.text.substring(0, start);
+        text2 = node.text.substring(start, end);
+        text3 = node.text.substring(end);
       }
     }
     final dom.Text newNodeBefore = dom.Text(text1);

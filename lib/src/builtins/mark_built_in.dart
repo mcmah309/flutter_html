@@ -37,6 +37,7 @@ class MarkBuiltIn extends HtmlExtension {
       // Colors.amberAccent.shade100 with 150 transparency
       color = defaultHighlightColor;
     } else {
+      // todo use color converted instead
       final colorChannels = colorStr
           .split(",")
           .map((e) => int.tryParse(e))
@@ -105,10 +106,9 @@ class MarkBuiltIn extends HtmlExtension {
   /// Adds a marker to the highlight that a comment can be attached to
   @override
   InlineSpan build(ExtensionContext context) {
-    String? range = context.element!.attributes["color"];
     // TODO replace with custom span that creates a floating widget
     //double lineSpacing = context.styledElement!.style.lineHeight!.size!;
-    double letterHeight = context.styledElement!.style.fontSize!.value;
+    double letterHeight = context.styledElement!.style.fontSize!.value; //todo remove null check, log, return nada
     double markerWidth = context.styledElement!.style.fontSize!.value;
     double markerHeight = markerWidth;
     return WidgetSpan(
