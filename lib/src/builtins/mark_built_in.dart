@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_tools/flutter_tools.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:rust_core/cell.dart';
 
@@ -38,18 +39,10 @@ class MarkBuiltIn extends HtmlExtension {
       // Colors.amberAccent.shade100 with 150 transparency
       color = defaultHighlightColor;
     } else {
-      // todo use color converted instead
-      final colorChannels = colorStr
-          .split(",")
-          .map((e) => int.tryParse(e))
-          .where((e) => e != null)
-          .cast<int>()
-          .toList(growable: false);
-      if (colorChannels.length != 4) {
+      color = const ColorConverter().fromJson(colorStr);
+      if (color == const Color.fromARGB(0, 0, 0, 0)) {
         color = defaultHighlightColor;
       }
-      color = Color.fromARGB(colorChannels[0], colorChannels[1],
-          colorChannels[2], colorChannels[3]);
     }
     _traverseAndAddStyle(context.styledElement!, Style(backgroundColor: color), Cell<int>(range), 0);
   }
