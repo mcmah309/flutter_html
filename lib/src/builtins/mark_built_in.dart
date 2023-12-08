@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:html/dom.dart' as dom;
+import 'package:rust_core/cell.dart';
 
 /// Adds Mark to the to the Text elements for the specified range and color. A mark consists of highlighting and
 /// adding a comment annotation widget
@@ -50,16 +51,14 @@ class MarkBuiltIn extends HtmlExtension {
       color = Color.fromARGB(colorChannels[0], colorChannels[1],
           colorChannels[2], colorChannels[3]);
     }
-    _traverseAndAddStyle(context.styledElement!, Style(backgroundColor: color),
-        _IntWrapper(range), 0);
+    _traverseAndAddStyle(context.styledElement!, Style(backgroundColor: color), Cell<int>(range), 0);
   }
 
-  void _traverseAndAddStyle(StyledElement element, Style style,
-      _IntWrapper characterCount, int skip) {
+  void _traverseAndAddStyle(StyledElement element, Style style, Cell<int> characterCount, int skip) {
     // add style to this element, if character count is smaller than length, break up and return, otherwise go down until no children, then, start going up
     // good opportunity to publish tree node. then add that as a depends to here and changed styled element to inherit from
     _traverseAndAddStyleDownInclusive(element, style, characterCount, skip);
-    if (characterCount.val > 0 && element.parent != null) {
+    if (characterCount.get() > 0 && element.parent != null) {
       int parentShouldSkip = 1;
       for (final parentChildElement in element.parent!.children) {
         if (parentChildElement == element) break;
@@ -70,9 +69,8 @@ class MarkBuiltIn extends HtmlExtension {
     }
   }
 
-  void _traverseAndAddStyleDownInclusive(StyledElement element, Style style,
-      _IntWrapper characterCount, int skip) {
-    if (characterCount.val > 0) {
+  void _traverseAndAddStyleDownInclusive(StyledElement element, Style style, Cell<int> characterCount, int skip) {
+    if (characterCount.get() > 0) {
       assert((element.node is dom.Text && element is TextContentElement) || (element.node is! dom.Text && element is!
       TextContentElement), "The only Text nodes and TextContentElements should only be paired together");
       if (element is TextContentElement) {
@@ -81,23 +79,20 @@ class MarkBuiltIn extends HtmlExtension {
         // Single string non-empty elements are not counted. See [THE_HOLY_TRINITY.md] for more.
         if(text == " "){
           // Intentionally empty
-        }
-        else if (length > characterCount.val) {
-          final splitElement = element.split(characterCount.val);
+        } else if (length > characterCount.get()) {
+          final splitElement = element.split(characterCount.get());
           assert(splitElement.length == 2);
           splitElement[0].style =
               splitElement[0].style.copyOnlyInherited(style);
-          characterCount.val -= characterCount.val;
+          characterCount.sub(characterCount.get());
           return;
         } else {
           element.style = element.style.copyOnlyInherited(style);
-          characterCount.val -= length;
+          characterCount.sub(length);
         }
       }
     }
-    for (int i = skip;
-        i < element.children.length && characterCount.val > 0;
-        ++i) {
+    for (int i = skip; i < element.children.length && characterCount.get() > 0; ++i) {
       _traverseAndAddStyleDownInclusive(
           element.children[i], style, characterCount, 0);
     }
@@ -146,12 +141,6 @@ class MarkBuiltIn extends HtmlExtension {
     //   ),
     // );
   }
-}
-
-class _IntWrapper {
-  _IntWrapper(this.val);
-
-  int val;
 }
 
 // class CustomMarkerIconPainter extends CustomPainter {

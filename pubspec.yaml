@@ -26,6 +26,8 @@ dependencies:
   dart_tools:
     path: ../dart_tools/core
 
+  rust_core: ^0.3.4
+
   flutter:
     sdk: flutter
 
@@ -35,6 +37,7 @@ dev_dependencies:
   flutter_lints: ^2.0.1
   meta: ^1.8.0
   melos: ^3.0.1
+
 
 screenshots:
   - description: 'An example of the output produced by flutter_html'
