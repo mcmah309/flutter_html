@@ -97,32 +97,24 @@ class MarkBuiltIn extends HtmlExtension {
     double markerWidth = context.styledElement!.style.fontSize!.value; //todo remove null check, log, return nada
     double markerHeight = markerWidth;
     return WidgetSpan(
-        child: BookMark(
+        child: Mark(
       markerHeight: markerHeight,
       markerWidth: markerWidth,
       lineHeight: markerHeight,
     ));
-    // return WidgetSpan(
-    //   child: Stack(
-    //     clipBehavior: Clip.none,
-    //     children: [
-    //       Positioned(
-    //         top: -(letterHeight + markerHeight / 2),
-    //         left: -markerWidth / 2,
-    //         child: CustomPaint(
-    //           size: Size(markerHeight, markerHeight),
-    //           painter: CustomMarkerIconPainter(),
-    //         ),
-    //       ),
-    //       const SizedBox.shrink(),
-    //     ],
-    //   ),
-    // );
   }
 }
 
-class BookMark extends StatefulWidget {
-  const BookMark({
+/// Widget that creates a "mark" (annotation).
+///
+/// Developer Notes: Gesture detection was not working, even with the custom gesture detector when using a regular
+/// stack. Using just an overlay
+/// resulted in when scrolling, the overlay mark would appear over the app and bottom bar. Therefore, the two approaches
+/// where combined, the icon is visible as an in page element (that gets covered on scroll) and the tap action is an
+/// overlay exactly on top of the icon. Unfortunately, this does mean that the tap action is available when the mark is
+/// under either of the bars though. The ideal solution would be just to have the in element stack pick up gestures.
+class Mark extends StatefulWidget {
+  const Mark({
     super.key,
     required this.markerHeight,
     required this.markerWidth,
@@ -136,10 +128,10 @@ class BookMark extends StatefulWidget {
   final Widget? child;
 
   @override
-  State<StatefulWidget> createState() => BookMarkState();
+  State<StatefulWidget> createState() => MarkState();
 }
 
-class BookMarkState extends State<BookMark> {
+class MarkState extends State<Mark> {
   final OverlayPortalController _controller = OverlayPortalController();
   final LayerLink layerLink = LayerLink();
 
@@ -151,116 +143,51 @@ class BookMarkState extends State<BookMark> {
     WidgetsBinding.instance.endOfFrame.then((_) {
       _controller.show();
     });
-    return CompositedTransformTarget(
-      link: layerLink,
-      child: Container(
-        color: Colors.red,
-        height: 1,
-        width: 1,
-        key: mark,
-        child: OverlayPortal(
-          controller: _controller,
-          overlayChildBuilder: (BuildContext context) {
-            return Positioned(
-              width: widget.markerWidth,
-              child: CompositedTransformFollower(
-                offset: Offset(-widget.markerWidth / 2, -widget.lineHeight - widget.markerHeight / 2),
-                link: layerLink,
-                child: GestureDetector(
-                    onTap: () {
-                      Logging.w("taasgaed");
-                    },
-                    child: Icon(Icons.bookmark,
-                        size: widget.markerHeight,
-                        color: const Color.fromARGB(255, 128, 0, 32), // burgundy
-                        shadows: <Shadow>[
-                          Shadow(color: Colors.black, blurRadius: widget.markerWidth / 5, offset: const Offset(1, 1))
-                        ])),
-              ),
-            );
-          },
+    final icon = Icon(Icons.bookmark,
+        size: widget.markerHeight,
+        color: const Color.fromARGB(255, 128, 0, 32), // burgundy
+        shadows: <Shadow>[Shadow(color: Colors.black, blurRadius: widget.markerWidth / 5, offset: const Offset(1, 1))]);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          top: -(widget.lineHeight + widget.markerHeight / 2),
+          // position outside the stack
+          left: -widget.markerWidth / 2,
+          child: SizedBox.shrink(
+            child: CustomTapDetector(
+                onTap: (duration, offset) {
+                  Logging.w("taasgaed");
+                },
+                child: icon),
+          ),
         ),
-      ),
+        CompositedTransformTarget(
+          link: layerLink,
+          child: SizedBox.shrink(
+            child: OverlayPortal(
+              controller: _controller,
+              overlayChildBuilder: (BuildContext context) {
+                return Positioned(
+                  width: widget.markerWidth,
+                  child: CompositedTransformFollower(
+                    offset: Offset(-widget.markerWidth / 2, -widget.lineHeight - widget.markerHeight / 2),
+                    link: layerLink,
+                    child: GestureDetector(
+                        onTap: () {
+                          Logging.w("taasgaed");
+                        },
+                        child: Opacity(
+                          opacity: 0,
+                          child: icon,
+                        )),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
-
-// class BookMarkState extends State<BookMark> {
-//   final OverlayPortalController _controller = OverlayPortalController();
-//   final LayerLink layerLink = LayerLink();
-//
-//   GlobalKey mark= GlobalKey();
-//   GlobalKey mark2= GlobalKey();
-//
-//   OverlayEntry? entry;
-//
-//   @override
-//   void dispose() {
-//     entry?.dispose();
-//     super.dispose();
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     WidgetsBinding.instance.endOfFrame.then((_){
-//       entry?.dispose();
-//       entry = OverlayEntry(builder: (BuildContext context) {
-//         RenderBox? box = mark.currentContext?.findRenderObject() as RenderBox?;
-//         if(box == null){
-//           Logging.e("This should never be null");
-//           return const SizedBox.shrink();
-//         }
-//         Offset position = box.localToGlobal(Offset.zero);
-//         return Positioned(
-//           left: position.dx,
-//           top: position.dy,
-//           child: CompositedTransformFollower(
-//             link: layerLink,
-//             child: GestureDetector(
-//                 onTap:() {
-//                   Logging.w("taasgaed");
-//                 },
-//                 child: Icon(Icons.bookmark,
-//                     size: widget.markerHeight,
-//                     color: const Color.fromARGB(255, 128, 0, 32), // burgundy
-//                     shadows: <Shadow>[
-//                       Shadow(color: Colors.black, blurRadius: widget.markerWidth / 5, offset: const Offset(1, 1))
-//                     ])),
-//           ),
-//         );
-//       });
-//       Overlay.of(context).insert(entry!);
-//     });
-//     return CompositedTransformTarget(
-//       link: layerLink,
-//       child: Container(
-//         color: Colors.red,
-//         height: 1,
-//         width: 1,
-//         key: mark,
-//       ),
-//     );
-//   }
-// }
-
-// class CustomMarkerIconPainter extends CustomPainter {
-//   @override
-//   void paint(Canvas canvas, Size size) {
-//     final centerX = size.width / 2;
-//     final centerY = size.height / 2;
-//     final radius = size.width / 2;
-//
-//     // Define the paint properties (color, style, etc.)
-//     final paint = Paint()
-//       ..color = const Color.fromARGB(255, 128, 0, 32) // burgundy
-//       ..style = PaintingStyle.fill;
-//
-//     // Draw your custom marker icon
-//     canvas.drawCircle(Offset(centerX, centerY), radius, paint);
-//   }
-//
-//   @override
-//   bool shouldRepaint(CustomPainter oldDelegate) {
-//     return false; // In this example, the icon is static and doesn't change.
-//   }
-// }
