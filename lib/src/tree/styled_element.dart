@@ -7,7 +7,7 @@ import 'package:html/dom.dart' as dom;
 import 'package:html/src/query_selector.dart';
 import 'package:list_counter/list_counter.dart';
 
-import '../processing/Node_order.dart';
+import '../processing/node_order.dart';
 
 /// A [StyledElement] applies a style to all of its children.
 class StyledElement {
