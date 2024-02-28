@@ -6,6 +6,7 @@ import 'package:html/dom.dart' as dom;
 //ignore: implementation_imports
 import 'package:html/src/query_selector.dart';
 import 'package:list_counter/list_counter.dart';
+import 'package:rust_core/result.dart';
 
 import '../processing/node_order.dart';
 
@@ -41,7 +42,8 @@ class StyledElement {
   }
 
   bool matchesSelector(String selector) {
-    return (element != null && matches(element!, selector)) || name == selector;
+    final isMatch = executeProtected(() => matches(element!, selector)); // issue https://github.com/Sub6Resources/flutter_html/issues/1298
+    return (element != null && isMatch.isOk() && isMatch.unwrap()) || name == selector;
   }
 
   Map<String, String> get attributes => node.attributes.map((key, value) {
