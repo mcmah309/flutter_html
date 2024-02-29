@@ -41,9 +41,37 @@ class StyledElement {
     }
   }
 
+  /// Note: I believe this checks if a css selector applies to this node. Usually used to then apply the selector properties
+  /// to the node
   bool matchesSelector(String selector) {
-    final isMatch = executeProtected(() => matches(element!, selector)); // issue https://github.com/Sub6Resources/flutter_html/issues/1298
-    return (element != null && isMatch.isOk() && isMatch.unwrap()) || name == selector;
+    if(name == selector){
+      return true;
+    }
+    if(element == null){
+      return false;
+    }
+    final isMatch = executeProtected(() => matches(element!, selector)).isOkAnd((p0) => p0); // issue https://github.com/Sub6Resources/flutter_html/issues/1298
+    return isMatch;
+  }
+
+  static final Expando<bool> _memoize = Expando();
+
+  /// Note: Given [matches] speed an the number of times this is called, [matchesSelector] is an extreme performance bottleneck.
+  /// memoizing gives an observed 10x speedup. The drawback is that if something about the node changes, this will not be picked up.
+  bool matchesSelectorMemoized(String selector) {
+    if(element == null){
+      return false;
+    }
+    if(name == selector){
+      return true;
+    }
+    final input = MemoizedMatchInput(element!, selector);
+    var isMatch = _memoize[input];
+    while(isMatch == null){
+      isMatch = executeProtected(() => matches(element!, selector)).isOkAnd((p0) => p0); // issue https://github.com/Sub6Resources/flutter_html/issues/1298
+      _memoize[input] = isMatch;
+    }
+    return isMatch;
   }
 
   Map<String, String> get attributes => node.attributes.map((key, value) {
@@ -145,4 +173,21 @@ extension DeepCopy on ListQueue<Counter> {
       return Counter(counter.name, counter.value);
     }));
   }
+}
+
+class MemoizedMatchInput {
+  dom.Node node;
+  String text;
+
+  MemoizedMatchInput(this.node, this.text);
+
+    @override
+  bool operator ==(Object other) =>
+      other is MemoizedMatchInput &&
+          node == other.node
+          && text == other.text;
+
+  @override
+  int get hashCode => node.hashCode ^ text.hashCode;
+
 }

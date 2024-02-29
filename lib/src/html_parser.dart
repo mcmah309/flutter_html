@@ -313,7 +313,7 @@ class _HtmlParserState extends State<HtmlParser> {
   void _styleTreeRecursive(StyledElement tree, styleTagDeclarations) {
     // Apply external CSS
     styleTagDeclarations.forEach((selector, style) {
-      if (tree.matchesSelector(selector)) {
+      if (tree.matchesSelectorMemoized(selector)) {
         tree.style = tree.style.merge(declarationsToStyle(style));
       }
     });
@@ -329,7 +329,7 @@ class _HtmlParserState extends State<HtmlParser> {
 
     // Apply custom styles
     widget.style.forEach((selector, style) {
-      if (tree.matchesSelector(selector)) {
+      if (tree.matchesSelectorMemoized(selector)) {
         tree.style = tree.style.merge(style);
       }
     });
