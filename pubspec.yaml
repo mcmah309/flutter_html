@@ -27,7 +27,7 @@ dependencies:
   dart_tools:
     path: ../dart_tools/core
 
-  rust_core: ^0.3.4
+  rust_core: ^0.5.0-dev1
 
   flutter:
     sdk: flutter
