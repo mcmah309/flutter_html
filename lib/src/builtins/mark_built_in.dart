@@ -1,8 +1,8 @@
-import 'package:dart_tools/dart_tools.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_tools/flutter_tools.dart';
 import 'package:html/dom.dart' as dom;
+import 'package:rewind/rewind.dart';
 import 'package:rust_core/cell.dart';
 
 /// Adds Mark to the to the Text elements for the specified range and color. A mark consists of highlighting and
@@ -157,7 +157,7 @@ class MarkState extends State<Mark> {
           child: SizedBox.shrink(
             child: CustomTapDetector(
                 onTap: (duration, offset) {
-                  Logging.w("taasgaed");
+                  Log.w("taasgaed"); //todo
                 },
                 child: icon),
           ),
@@ -175,7 +175,7 @@ class MarkState extends State<Mark> {
                     link: layerLink,
                     child: GestureDetector(
                         onTap: () {
-                          Logging.w("taasgaed");
+                          Log.w("taasgaed"); //todo
                         },
                         child: Opacity(
                           opacity: 0,

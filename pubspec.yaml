@@ -24,10 +24,8 @@ dependencies:
   flutter_tools:
     path: ../flutter_tools
 
-  dart_tools:
-    path: ../dart_tools/core
-
-  rust_core: ^0.5.0-dev1
+  rust_core: ^0.5.0
+  rewind: ^0.2.1
 
   flutter:
     sdk: flutter
