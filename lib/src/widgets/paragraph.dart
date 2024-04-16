@@ -11,6 +11,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_html/src/widgets/highlightable_text.dart';
+
+/// Signature for the callback that reports when a selection event was received.
+typedef SelectionEventCallback = void Function(TextSelection? selection, SelectionEvent event);
 
 /// The start and end positions for a word.
 typedef _WordBoundaryRecord = ({TextPosition wordStart, TextPosition wordEnd});
@@ -247,11 +251,17 @@ mixin RenderInlineChildrenContainerDefaults on RenderBox, ContainerRenderObjectM
 
 /// A render object that displays a paragraph of text.
 class RenderParagraph extends RenderBox with ContainerRenderObjectMixin<RenderBox, TextParentData>, RenderInlineChildrenContainerDefaults, RelayoutWhenSystemFontsChangeMixin {
+  
+  /// {@template flutter.rendering.RenderParagraph.onSelectionEvent}
+  /// Called when a [SelectionEvent] is sent.
+  /// {@endtemplate}
+  SelectionEventCallback? onSelectionEvent;
+  
   /// Creates a paragraph render object.
   ///
   /// The [maxLines] property may be null (and indeed defaults to null), but if
   /// it is not null, it must be greater than zero.
-  RenderParagraph(InlineSpan text, {
+  RenderParagraph(InlineSpan text,{
     TextAlign textAlign = TextAlign.start,
     required TextDirection textDirection,
     bool softWrap = true,
@@ -271,6 +281,7 @@ class RenderParagraph extends RenderBox with ContainerRenderObjectMixin<RenderBo
     List<RenderBox>? children,
     Color? selectionColor,
     SelectionRegistrar? registrar,
+    this.onSelectionEvent,
   }) : assert(text.debugAssertIsValid()),
        assert(maxLines == null || maxLines > 0),
        assert(
@@ -409,6 +420,7 @@ class RenderParagraph extends RenderBox with ContainerRenderObjectMixin<RenderBo
             paragraph: this,
             range: TextRange(start: start, end: end),
             fullText: plainText,
+            onSelectionEvent: onSelectionEvent,
           ),
         );
         start = end;
@@ -1335,10 +1347,13 @@ class RenderParagraph extends RenderBox with ContainerRenderObjectMixin<RenderBo
 /// to create multiple `_SelectableFragment`s so that they can be selected
 /// separately.
 class _SelectableFragment with Selectable, Diagnosticable, ChangeNotifier implements TextLayoutMetrics {
+  SelectionEventCallback? onSelectionEvent;
+
   _SelectableFragment({
     required this.paragraph,
     required this.fullText,
     required this.range,
+    this.onSelectionEvent
   }) : assert(range.isValid && !range.isCollapsed && range.isNormalized) {
     if (kFlutterMemoryAllocationsEnabled) {
       ChangeNotifier.maybeDispatchObjectCreation(this);
@@ -1459,6 +1474,15 @@ class _SelectableFragment with Selectable, Diagnosticable, ChangeNotifier implem
     if (existingSelectionStart != _textSelectionStart ||
         existingSelectionEnd != _textSelectionEnd) {
       _didChangeSelection();
+      if (onSelectionEvent != null) {
+        TextSelection? selection;
+        if (_textSelectionStart != null && _textSelectionEnd != null) {
+          final int start = math.min(_textSelectionStart!.offset, _textSelectionEnd!.offset);
+          final int end = math.max(_textSelectionStart!.offset, _textSelectionEnd!.offset);
+          selection = TextSelection(baseOffset: start, extentOffset: end);
+        }
+        onSelectionEvent!.call(selection, event);
+      }
     }
     return result;
   }
