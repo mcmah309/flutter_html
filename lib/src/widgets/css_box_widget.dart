@@ -124,9 +124,9 @@ class CssBoxWidget extends StatelessWidget {
     );
   }
 
+  // css markers https://developer.mozilla.org/en-US/docs/Web/CSS/::marker
   static InlineSpan? _generateMarkerBoxSpan(StyledElement styledElement) {
     if (styledElement.style.display == Display.listItem) {
-      ;
       // First handle listStyleImage
       if (styledElement.style.listStyleImage != null) {
         return WidgetSpan(
@@ -505,18 +505,18 @@ class RenderCSSBox extends RenderBox
 
     // Calculate child size
     final childConstraints = constraints.copyWith(
-      maxWidth: (this.width.unit != Unit.auto)
+      maxWidth: math.max(0,(this.width.unit != Unit.auto)
           ? this.width.value
           : containingBlockSize.width -
               (margins.left?.value ?? 0) -
-              (margins.right?.value ?? 0),
-      maxHeight: (this.height.unit != Unit.auto)
+              (margins.right?.value ?? 0)),
+      maxHeight: math.max(0,(this.height.unit != Unit.auto)
           ? this.height.value
           : containingBlockSize.height -
               (margins.top?.value ?? 0) -
-              (margins.bottom?.value ?? 0),
-      minWidth: (this.width.unit != Unit.auto) ? this.width.value : 0,
-      minHeight: (this.height.unit != Unit.auto) ? this.height.value : 0,
+              (margins.bottom?.value ?? 0)),
+      minWidth: math.max(0,(this.width.unit != Unit.auto) ? this.width.value : 0),
+      minHeight: math.max(0,(this.height.unit != Unit.auto) ? this.height.value : 0),
     );
     final Size childSize = layoutChild(child, childConstraints);
     if (markerBoxChild != null) {
