@@ -21,8 +21,13 @@ ParentedTreeTraversal<StyledElement> nodeTraversal = ParentedTreeTraversal(
 
 class HighlightManager {
   List<Selection> currentSelections = [];
+  Element? _context;
 
-  void handleSelection(StyledElement styledElement, void Function() rebuild,
+  void setContext(BuildContext context){
+    _context = context as Element;
+  }
+
+  void handleSelection(StyledElement styledElement,
       TextSelection? selection, SelectionEvent event) {
     currentSelections.removeWhere((element) =>
         element.styledElement == styledElement ||
@@ -32,7 +37,7 @@ class HighlightManager {
         selection.start == selection.end) {
       return;
     }
-    currentSelections.add(Selection(styledElement, selection, rebuild));
+    currentSelections.add(Selection(styledElement, selection));
   }
 
   void mark() {
@@ -59,39 +64,6 @@ class HighlightManager {
       return;
     }
     final (endTextElement, end) = result;
-    // late TextContentElement startTextElement;
-    // int startRelativeToStyledElement = startSelection.selection.start;
-    // int offsetInStyledElementUntilTextContentElement = 0;
-    // for (final e in nodeTraversal.postOrderIterable(startSelection.styledElement)) {
-    //   if (e is! TextContentElement) {
-    //     continue;
-    //   }
-    //   int length = e.node.text.length;
-    //   if (offsetInStyledElementUntilTextContentElement + length < startRelativeToStyledElement) {
-    //     offsetInStyledElementUntilTextContentElement += length;
-    //     continue;
-    //   }
-    //   startTextElement = e;
-    //   break;
-    // }
-    // int start = startRelativeToStyledElement - offsetInStyledElementUntilTextContentElement;
-
-    // late TextContentElement endTextElement;
-    // int endRelativeToStyledElement = endSelection.selection.end;
-    // offsetInStyledElementUntilTextContentElement = 0;
-    // for (final e in nodeTraversal.postOrderIterable(endSelection.styledElement)) {
-    //   if (e is! TextContentElement) {
-    //     continue;
-    //   }
-    //   int length = e.node.text.length;
-    //   if (offsetInStyledElementUntilTextContentElement + length < endRelativeToStyledElement) {
-    //     offsetInStyledElementUntilTextContentElement += length;
-    //     continue;
-    //   }
-    //   endTextElement = e;
-    //   break;
-    // }
-    // int end = endRelativeToStyledElement - offsetInStyledElementUntilTextContentElement;
 
     List<TextContentElement> splits = startTextElement.split(0, start);
     final StyledElement highlightMarkerElement;
@@ -126,11 +98,9 @@ class HighlightManager {
     }
 
     const MarkBuiltIn().addColorForRangeIfPresent(highlightMarkerElement);
-
-    for (final selection in currentSelections) {
-      selection.rebuild();
-    }
     currentSelections.clear();
+
+    _context?.markNeedsBuild();
   }
 }
 
@@ -175,7 +145,6 @@ String _generateUniqueHtmlId() {
 class Selection {
   StyledElement styledElement;
   TextSelection selection;
-  void Function() rebuild;
 
-  Selection(this.styledElement, this.selection, this.rebuild);
+  Selection(this.styledElement, this.selection);
 }

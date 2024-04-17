@@ -49,7 +49,7 @@ class StyledElementWidget extends StatelessWidget {
     return Text.rich(
       textSpan,
       onSelectionEvent: (selection, event) =>
-          highlightManager.handleSelection(styledElement, rebuild ?? () => (context as Element).markNeedsBuild(), selection, event),
+          highlightManager.handleSelection(styledElement, selection, event),
       key: key,
       style: style,
       strutStyle: strutStyle,

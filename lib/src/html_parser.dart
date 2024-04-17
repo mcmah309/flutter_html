@@ -191,7 +191,7 @@ class _HtmlParserState extends State<HtmlParser> {
     return CssBoxWidgetWithInlineSpanChildren(
       styledElement: root,
       //TODO can we have buildTree return a list of InlineSpans rather than a single one.
-      children: [buildTree(root, null)],
+      children: [buildTree(root)],
       shrinkWrap: widget.shrinkWrap,
       top: true,
       highlightManager: widget.highlightManager,
@@ -393,9 +393,9 @@ class _HtmlParserState extends State<HtmlParser> {
   }
 
   /// [buildTree] converts a tree of [StyledElement]s to an [InlineSpan] tree.
-  InlineSpan buildTree(StyledElement tree, ExtensionContext? parentContext) {
+  InlineSpan buildTree(StyledElement tree) {
     //TODO, can't we just break tree out from parent element created in lexHtmlTree?
-    return _buildTreeRecursive(tree, parentContext);
+    return _buildTreeRecursive(tree, null);
   }
 
   InlineSpan _buildTreeRecursive(
