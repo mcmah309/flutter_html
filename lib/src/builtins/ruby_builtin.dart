@@ -18,8 +18,7 @@ class RubyBuiltIn extends HtmlExtension {
       };
 
   @override
-  StyledElement prepare(
-      ExtensionContext context, List<StyledElement> children) {
+  StyledElement prepare(ExtensionContext context, List<StyledElement> children) {
     if (context.elementName == "ruby") {
       return RubyElement(
         element: context.node as dom.Element,
@@ -42,7 +41,7 @@ class RubyBuiltIn extends HtmlExtension {
   }
 
   @override
-  InlineSpan build(ExtensionContext context) {
+  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
     StyledElement? styledElement;
     List<Widget> widgets = <Widget>[];
     final rubySize = context.parser.style['rt']?.fontSize?.value ??
@@ -71,11 +70,11 @@ class RubyBuiltIn extends HtmlExtension {
                   transform: Matrix4.translationValues(0, -(rubyYPos), 0),
                   child: CssBoxWidget(
                     styledElement: childStyledElement,
+                    highlightManager: highlightManager,
                     child: Text(
                       childStyledElement.element!.innerHtml,
-                      style: childStyledElement.style
-                          .generateTextStyle()
-                          .copyWith(fontSize: rubySize),
+                      style:
+                          childStyledElement.style.generateTextStyle().copyWith(fontSize: rubySize),
                     ),
                   ),
                 ),
@@ -83,17 +82,19 @@ class RubyBuiltIn extends HtmlExtension {
             ),
             CssBoxWidget(
               styledElement: context.styledElement!,
+              highlightManager: highlightManager,
               child: styledElement is TextContentElement
                   ? StyledElementWidget(
                       styledElement,
+                      highlightManager,
                       TextSpan(text: styledElement.text?.trim() ?? ""),
                       style: context.styledElement!.style.generateTextStyle(),
                     )
                   : StyledElementWidget(
                       styledElement,
-                      const TextSpan(
-                          text:
-                              '!rc!')), // TODO was context.parser.parseTree(context, node)),
+                      highlightManager,
+                      const TextSpan(text: '!rc!'),
+                    ), // TODO was context.parser.parseTree(context, node)),
             ),
           ],
         );

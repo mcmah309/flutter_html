@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_html/src/builtins/image_builtin.dart';
 import 'package:flutter_html/src/extension/html_extension.dart';
 
@@ -59,11 +60,11 @@ class ImageExtension extends ImageBuiltIn {
   }
 
   @override
-  InlineSpan build(ExtensionContext context) {
+  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
     if (builder != null) {
       return builder!.call(context);
     } else {
-      return super.build(context);
+      return super.build(context, highlightManager);
     }
   }
 }

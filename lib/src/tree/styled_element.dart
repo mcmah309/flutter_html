@@ -116,6 +116,17 @@ class StyledElement {
     node.parentNode = null;
   }
 
+  bool isAncestorOf(StyledElement element){
+    StyledElement? parent = element.parent;
+    while(parent != null){
+      if(parent == this){
+        return true;
+      }
+      parent = parent.parent;
+    }
+    return false;
+  }
+
   @override
   String toString() {
     String selfData =

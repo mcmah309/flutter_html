@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_html/src/extension/html_extension.dart';
 import 'package:flutter_html/src/style.dart';
 import 'package:flutter_html/src/tree/styled_element.dart';
@@ -23,13 +24,14 @@ class VerticalAlignBuiltIn extends HtmlExtension {
   }
 
   @override
-  InlineSpan build(ExtensionContext context) {
+  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
     return WidgetSpan(
       child: Transform.translate(
         offset: Offset(0, _getVerticalOffset(context.styledElement!)),
-        child: CssBoxWidget.withInlineSpanChildren(
+        child: CssBoxWidgetWithInlineSpanChildren(
           children: context.buildInlineSpanChildrenMemoized!,
           styledElement: context.styledElement!,
+          highlightManager: highlightManager,
         ),
       ),
     );

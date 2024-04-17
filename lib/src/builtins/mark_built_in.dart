@@ -26,7 +26,11 @@ class MarkBuiltIn extends HtmlExtension {
   /// stops in the middle of an element, split the stylized element
   @override
   void beforeProcessing(ExtensionContext context) {
-    String? rangeStr = context.element!.attributes["range"];
+    addColorForRangeIfPresent(context.styledElement!);
+  }
+
+  void addColorForRangeIfPresent(StyledElement element){
+    String? rangeStr = element.attributes["range"];
     if (rangeStr == null) {
       return;
     }
@@ -34,7 +38,7 @@ class MarkBuiltIn extends HtmlExtension {
     if (range == null) {
       return;
     }
-    String? colorStr = context.element!.attributes["color"];
+    String? colorStr = element.attributes["color"];
     Color color;
     if (colorStr == null) {
       // Colors.amberAccent.shade100 with 150 transparency
@@ -45,7 +49,7 @@ class MarkBuiltIn extends HtmlExtension {
         color = defaultHighlightColor;
       }
     }
-    _traverseAndAddStyle(context.styledElement!, Style(backgroundColor: color), Cell<int>(range), 0);
+    _traverseAndAddStyle(element, Style(backgroundColor: color), Cell<int>(range), 0);
   }
 
   void _traverseAndAddStyle(StyledElement element, Style style, Cell<int> characterCount, int skip) {
@@ -93,15 +97,16 @@ class MarkBuiltIn extends HtmlExtension {
 
   /// Adds a marker to the highlight that a comment can be attached to
   @override
-  InlineSpan build(ExtensionContext context) {
+  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
     double markerWidth = context.styledElement!.style.fontSize!.value; //todo remove null check, log, return nada
     double markerHeight = markerWidth;
-    return WidgetSpan(
-        child: Mark(
-      markerHeight: markerHeight,
-      markerWidth: markerWidth,
-      lineHeight: markerHeight,
-    ));
+    // return WidgetSpan(
+    //     child: Mark(
+    //   markerHeight: markerHeight,
+    //   markerWidth: markerWidth,
+    //   lineHeight: markerHeight,
+    // ));
+    return TextSpan();
   }
 }
 

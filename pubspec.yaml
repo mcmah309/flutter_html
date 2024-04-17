@@ -24,6 +24,14 @@ dependencies:
   flutter_tools:
     path: ../flutter_tools
 
+  dart_tools:
+    path: ../dart_tools
+
+  tree_traversal:
+    git: #todo replace with package
+      url: git@github.com:mcmah309/tree_traversal.git
+      ref: main
+
   rust_core: ^0.5.0
   rewind: ^0.2.1
 

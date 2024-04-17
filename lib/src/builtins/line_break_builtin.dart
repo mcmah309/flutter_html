@@ -21,7 +21,7 @@ class LineBreakBuiltIn extends HtmlExtension {
   }
 
   @override
-  InlineSpan build(ExtensionContext context) {
+  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
     // return const WidgetSpan(
     //     child: Row(children: [
     //   Expanded(

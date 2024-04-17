@@ -32,7 +32,7 @@ class TextBuiltIn extends HtmlExtension {
   }
 
   @override
-  InlineSpan build(ExtensionContext context) {
+  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
     // if (context.styledElement! is EmptyContentElement) {
     //   assert(false);
     //   return const TextSpan();

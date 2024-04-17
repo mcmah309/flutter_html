@@ -40,6 +40,7 @@ class HtmlParser extends StatefulWidget {
   final Set<String>? onlyRenderTheseTags;
   final OnTap? internalOnAnchorTap;
   final Html? root;
+  final HighlightManager highlightManager;
 
   HtmlParser({
     required super.key,
@@ -55,6 +56,7 @@ class HtmlParser extends StatefulWidget {
     required this.extensions,
     required this.doNotRenderTheseTags,
     required this.onlyRenderTheseTags,
+    required this.highlightManager,
     this.root,
   }) : internalOnAnchorTap = onAnchorTap ??
       (key != null ? _handleAnchorTap(key, onLinkTap) : onLinkTap);
@@ -128,14 +130,14 @@ class HtmlParser extends StatefulWidget {
   /// Builds the StyledElement into an InlineSpan using one of the built-ins
   /// or HtmlExtensions available. If none of the extensions matches, returns
   /// an empty TextSpan.
-  InlineSpan buildFromExtension(ExtensionContext extensionContext, {
+  InlineSpan buildFromExtension(ExtensionContext extensionContext, HighlightManager highlightManager, {
     Set<HtmlExtension> extensionsToIgnore = const {},
   }) {
     // Loop through every extension and see if it can handle this node
     for (final extension in extensions) {
       if (!extensionsToIgnore.contains(extension) &&
           extension.matches(extensionContext)) {
-        return extension.build(extensionContext);
+        return extension.build(extensionContext,highlightManager);
       }
     }
 
@@ -143,7 +145,7 @@ class HtmlParser extends StatefulWidget {
     for (final builtIn in builtIns) {
       if (!extensionsToIgnore.contains(builtIn) &&
           builtIn.matches(extensionContext)) {
-        return builtIn.build(extensionContext);
+        return builtIn.build(extensionContext,highlightManager);
       }
     }
 
@@ -186,12 +188,13 @@ class _HtmlParserState extends State<HtmlParser> {
   @override
   Widget build(BuildContext context) {
     //Rendering Step
-    return CssBoxWidget.withInlineSpanChildren(
+    return CssBoxWidgetWithInlineSpanChildren(
       styledElement: root,
       //TODO can we have buildTree return a list of InlineSpans rather than a single one.
       children: [buildTree(root, null)],
       shrinkWrap: widget.shrinkWrap,
       top: true,
+      highlightManager: widget.highlightManager,
     );
   }
 
@@ -428,6 +431,6 @@ class _HtmlParserState extends State<HtmlParser> {
       return const TextSpan(text: "");
     }
 
-    return widget.buildFromExtension(extensionContext);
+    return widget.buildFromExtension(extensionContext, widget.highlightManager);
   }
 }

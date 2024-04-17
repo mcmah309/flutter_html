@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_html/src/anchor.dart';
 import 'package:flutter_html/src/css_parser.dart';
 import 'package:flutter_html/src/extension/html_extension.dart';
@@ -422,7 +423,7 @@ class StyledElementBuiltIn extends HtmlExtension {
   }
 
   @override
-  InlineSpan build(ExtensionContext context) {
+  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
     if (context.styledElement!.style.display == Display.listItem ||
         ((context.styledElement!.style.display == Display.block ||
                 context.styledElement!.style.display == Display.inlineBlock) &&
@@ -431,7 +432,8 @@ class StyledElementBuiltIn extends HtmlExtension {
       return WidgetSpan(
         alignment: PlaceholderAlignment.baseline,
         baseline: TextBaseline.alphabetic,
-        child: CssBoxWidget.withInlineSpanChildren(
+        child: CssBoxWidgetWithInlineSpanChildren(
+          highlightManager: highlightManager,
           key: context.parser.key == null || context.styledElement == null
               ? null
               : AnchorKey.of(context.parser.key!, context.styledElement!),

@@ -1,4 +1,5 @@
 import 'package:flutter/painting.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_html/src/extension/extension_context.dart';
 import 'package:flutter_html/src/style.dart';
 import 'package:flutter_html/src/tree/styled_element.dart';
@@ -59,7 +60,7 @@ abstract class HtmlExtension {
   /// The final step in the chain. Converts the StyledElement tree, with its
   /// attached `Style` elements, into an `InlineSpan` tree that includes
   /// Widget/TextSpans that can be rendered in a RichText widget.
-  InlineSpan build(ExtensionContext context) {
+  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
     throw UnimplementedError(
       "Extension `$runtimeType` matched `${context.styledElement!.name}` but didn't implement `parse`",
     );

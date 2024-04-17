@@ -1,44 +1,69 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart' hide Text;
 import 'package:flutter_html/flutter_html.dart';
+
+import 'text.dart';
 
 /// A [RichText] widget that contains a [StyledElement] object that represents
 /// where the textSpan came from
-class StyledElementWidget extends Text {
-  StyledElementWidget(
+class StyledElementWidget extends StatelessWidget {
+  const StyledElementWidget(
     this.styledElement,
-    InlineSpan textSpan, {
-    Key? key,
-    TextStyle? style,
-    StrutStyle? strutStyle,
-    TextAlign? textAlign,
-    TextDirection? textDirection,
-    Locale? locale,
-    bool? softWrap,
-    TextOverflow? overflow,
-    //3.2
-    // TextScaler? textScaler,
-    int? maxLines,
-    String? semanticsLabel,
-    TextWidthBasis? textWidthBasis,
-    TextHeightBehavior? textHeightBehavior,
-    Color? selectionColor,
-  }) : super.rich(
-          textSpan,
-          key: key,
-          style: style,
-          strutStyle: strutStyle,
-          textAlign: textAlign,
-          textDirection: textDirection,
-          locale: locale,
-          softWrap: softWrap,
-          overflow: overflow,
-          //textScaler: textScaler,
-          maxLines: maxLines,
-          semanticsLabel: semanticsLabel,
-          textWidthBasis: textWidthBasis,
-          textHeightBehavior: textHeightBehavior,
-          selectionColor: selectionColor,
-        );
+    this.highlightManager,
+    this.textSpan, {
+    super.key,
+    this.rebuild,
+    this.style,
+    this.strutStyle,
+    this.textAlign,
+    this.textDirection,
+    this.locale,
+    this.softWrap,
+    this.overflow,
+    this.maxLines,
+    this.semanticsLabel,
+    this.textWidthBasis,
+    this.textHeightBehavior,
+    this.selectionColor,
+  });
 
-  StyledElement styledElement;
+  final StyledElement styledElement;
+  final HighlightManager highlightManager;
+  final InlineSpan textSpan;
+  final void Function()? rebuild;
+
+  final TextStyle? style;
+  final StrutStyle? strutStyle;
+  final TextAlign? textAlign;
+  final TextDirection? textDirection;
+  final Locale? locale;
+  final bool? softWrap;
+  final TextOverflow? overflow;
+  final int? maxLines;
+  final String? semanticsLabel;
+  final TextWidthBasis? textWidthBasis;
+  final TextHeightBehavior? textHeightBehavior;
+  final Color? selectionColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      textSpan,
+      onSelectionEvent: (selection, event) =>
+          highlightManager.handleSelection(styledElement, rebuild ?? () => (context as Element).markNeedsBuild(), selection, event),
+      key: key,
+      style: style,
+      strutStyle: strutStyle,
+      textAlign: textAlign,
+      textDirection: textDirection,
+      locale: locale,
+      softWrap: softWrap,
+      overflow: overflow,
+      //textScaler: textScaler,
+      maxLines: maxLines,
+      semanticsLabel: semanticsLabel,
+      textWidthBasis: textWidthBasis,
+      textHeightBehavior: textHeightBehavior,
+      selectionColor: selectionColor,
+    );
+  }
 }

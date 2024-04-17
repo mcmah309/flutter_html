@@ -39,7 +39,7 @@ class InteractiveElementBuiltIn extends HtmlExtension {
   }
 
   @override
-  InlineSpan build(ExtensionContext context) {
+  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
     return TextSpan(
       children: context.buildInlineSpanChildrenMemoized!.map((childSpan) {
         return _processInteractableChild(context, childSpan);
