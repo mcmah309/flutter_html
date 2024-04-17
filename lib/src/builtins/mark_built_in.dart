@@ -75,7 +75,7 @@ class MarkBuiltIn extends HtmlExtension {
       if (element is TextContentElement) {
         String text = element.text;
         int length = text.length;
-        // Single string non-empty elements are not counted. See [THE_HOLY_TRINITY.md] for more.
+        // Single string non-empty elements are not counted. See [Guarentees.md] for more.
         if (text == " ") {
           // Intentionally empty
         } else if (length > characterCount.get()) {

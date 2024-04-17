@@ -47,22 +47,24 @@ class TextContentElement extends ReplacedElement {
 
   /// splits this [TextContentElement] at the indexes and makes any necessary changes to the
   /// tree. Returns the [TextContentElement]'s acted on.
-  /// [start] inclusive, [end] exclusive
+  /// [start] inclusive, [end] exclusive. Will return [this] is the entire range is covered
   List<TextContentElement> split(int start, [int? end]) {
     int length = text.length;
     if (start >= length) {
-      assert(false);
-      return [this];
+      throw ArgumentError("Start of `$start' must be less than length of '$length'.");
     }
     end ??= text.length;
-    assert(start < end);
+    if(start >= end){
+      throw ArgumentError("Start of `$start' must be less than end of '$end'.");
+    }
     final String text1;
     final String text2;
     String? text3;
     if (start == 0) {
-      if (end == text.length || end == 0) {
+      if (end == text.length) {
         return [this];
-      } else {
+      } 
+      else {
         text1 = node.text.substring(0, end);
         text2 = node.text.substring(end);
       }

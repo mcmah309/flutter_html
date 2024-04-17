@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:collection/collection.dart';
-import 'package:dart_tools/dart_tools.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' hide RenderParagraph;
 import 'package:flutter_html/flutter_html.dart';
@@ -23,12 +22,12 @@ class HighlightManager {
   List<Selection> currentSelections = [];
   Element? _context;
 
-  void setContext(BuildContext context){
+  void setContext(BuildContext context) {
     _context = context as Element;
   }
 
-  void handleSelection(StyledElement styledElement,
-      TextSelection? selection, SelectionEvent event) {
+  void handleSelection(
+      StyledElement styledElement, TextSelection? selection, SelectionEvent event) {
     currentSelections.removeWhere((element) =>
         element.styledElement == styledElement ||
         element.styledElement.isAncestorOf(styledElement));
@@ -40,7 +39,7 @@ class HighlightManager {
     currentSelections.add(Selection(styledElement, selection));
   }
 
-  void mark() {
+  void mark({void Function(StyledElement)? newElementCallback}) {
     currentSelections
         .sortBy<num>((element) => element.styledElement.nodeToIndex[element.styledElement.node]!);
     // for (final x in currentSelections) {
@@ -65,50 +64,77 @@ class HighlightManager {
     }
     final (endTextElement, end) = result;
 
-    List<TextContentElement> splits = startTextElement.split(0, start);
-    final StyledElement highlightMarkerElement;
-    // The node already has a highlight, so we adjust it.
-    if (splits.length == 1) {
-      highlightMarkerElement = _nextHighlightElementBeforeAnyTextElement(splits[0]);
-      int range;
-      if (startTextElement == endTextElement) {
-        range = end - start;
-      } else {
-        range = characterCountUntilNode(splits[0].node, endTextElement.node) + end - start;
-      }
-      highlightMarkerElement.node.attributes["range"] = "$range";
+    StyledElement highlightMarkerElement;
+
+    /// The selection starts at the start of the element
+    if (start == 0) {
+      highlightMarkerElement = _placeMarkBefore(startTextElement, endTextElement, start, end);
     } else {
-      assert(splits.length == 2);
-      int range;
-      if (startTextElement == endTextElement) {
-        range = end - start;
+      List<TextContentElement> splits = startTextElement.split(0, start);
+      // Split encompassed the whole range, so [startTextElement] is actually the element before the element we want to highlight.
+      if (splits.length == 1) {
+        // The next element may already have a highlight, so we check and adjust it if so, if not, we create a new one.
+        highlightMarkerElement =
+            _nextHighlightElementBeforeAnyTextElementOrNextTextElement(splits[0]);
+        if (highlightMarkerElement is TextContentElement) {
+          throw StateError(
+              "I think this should be possible if the previous comments hold, but I may be wrong in the previous comments. If this is thrown, then obviously this is possible, so replicate and fix.");
+        } else {
+          int range;
+          if (startTextElement == endTextElement) {
+            range = end - start;
+          } else {
+            range = _characterCountUntilNode(splits[0], endTextElement) + end - start;
+          }
+          highlightMarkerElement.node.attributes["range"] = "$range";
+        }
       } else {
-        range = characterCountUntilNode(splits[1].node, endTextElement.node) + end;
+        assert(splits.length == 2);
+        highlightMarkerElement = _placeMarkBefore(splits[1], endTextElement, start, end);
       }
-      final markNode = dom.Element.tag("o-mark")
-        ..attributes["id"] = _generateUniqueHtmlId()
-        ..attributes["range"] = "$range";
-      Color backgroundColor = MarkBuiltIn.defaultHighlightColor;
-      highlightMarkerElement = StyledElement(
-        style: splits[1].style.copyOnlyInherited(Style(backgroundColor: backgroundColor)),
-        node: markNode,
-        nodeToIndex: splits[1].nodeToIndex,
-      )..attributes["range"] = "$range";
-      splits[1].insertBefore(highlightMarkerElement);
     }
 
     const MarkBuiltIn().addColorForRangeIfPresent(highlightMarkerElement);
     currentSelections.clear();
 
     _context?.markNeedsBuild();
+
+    newElementCallback?.call(highlightMarkerElement);
   }
 }
 
+StyledElement _placeMarkBefore(
+    TextContentElement placeBeforeElement, TextContentElement endTextElement, int start, int end) {
+  int range;
+  if (placeBeforeElement == endTextElement) {
+    range = end - start;
+  } else {
+    range = _characterCountUntilNode(placeBeforeElement, endTextElement) + end;
+  }
+  final markNode = dom.Element.tag("o-mark")
+    ..attributes["id"] = _generateUniqueHtmlId()
+    ..attributes["range"] = "$range";
+  Color backgroundColor = MarkBuiltIn.defaultHighlightColor;
+  StyledElement highlightMarkerElement = StyledElement(
+    style: placeBeforeElement.style.copyOnlyInherited(Style(backgroundColor: backgroundColor)),
+    node: markNode,
+    nodeToIndex: placeBeforeElement.nodeToIndex,
+  )..attributes["range"] = "$range";
+  placeBeforeElement.insertBefore(highlightMarkerElement);
+  return highlightMarkerElement;
+}
+
+/// Gets the next [TextContentElement]. Also returns the number of line breaks, since these, count as a item during selection.
+/// Line breaks are considered 1 in the offset (since there are counted as 1 in selections as well).
+//todo are other elements like an image or another styledelement counted as one as well?
 (TextContentElement, int)? _nextTextElementAtOffset(StyledElement styledElement, int offset) {
   assert(offset >= 0);
   int currentOffset = 0;
   for (final element in nodeTraversal.postOrderIterable(styledElement)) {
     if (element is! TextContentElement) {
+      if (element is LinebreakContentElement) {
+        currentOffset += 1;
+      }
       continue;
     }
     int length = element.node.text.length;
@@ -123,17 +149,42 @@ class HighlightManager {
   return null;
 }
 
-StyledElement _nextHighlightElementBeforeAnyTextElement(StyledElement styledElement) {
+/// Gets the next highlight elment (element with "range" attribute).
+StyledElement _nextHighlightElementBeforeAnyTextElementOrNextTextElement(
+    StyledElement styledElement) {
   for (final element in nodeTraversal.postOrderContinuationIterable(styledElement).skip(1)) {
     if (element.node.attributes.containsKey("range")) {
       return element;
     }
     if (element is TextContentElement) {
-      break;
+      return element;
     }
   }
-  throw Exception(
-      "Expected next element before any text to be a highlight one, but this was not the case");
+  throw Exception("There is no next element.");
+}
+
+/// Counts the characters in [start,end) range skipping any text nodes that are just a single whitespace - see [Guarentees.md] for why.
+int _characterCountUntilNode(StyledElement start, StyledElement end) {
+  bool isFound = false;
+  int count = 0;
+  for (final element in nodeTraversal.preOrderContinuationIterable(start)) {
+    if (element == end) {
+      isFound = true;
+      break;
+    }
+    final node = element.node;
+    if (node is! dom.Text) {
+      continue;
+    }
+    if (node.text == " ") {
+      continue;
+    }
+    count += node.text.length;
+  }
+  if (isFound) {
+    return count;
+  }
+  throw ArgumentError("start is not before end in tree.");
 }
 
 String _generateUniqueHtmlId() {
