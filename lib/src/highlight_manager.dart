@@ -12,11 +12,17 @@ import 'package:tree_traversal/tree_traversal.dart';
 
 import 'widgets/paragraph.dart';
 
-ParentedTreeTraversal<StyledElement> nodeTraversal = ParentedTreeTraversal(
+ParentedTreeTraversal<StyledElement> elementTraversal = ParentedTreeTraversal(
     getChildren: (element) => element.children,
     getParent: (element) => element.parent,
     getChildAtIndex: (element, i) => element.children[i],
     getChildsIndex: (parent, element) => parent.children.indexOf(element));
+
+ParentedTreeTraversal<dom.Node> nodeTraversal = ParentedTreeTraversal(
+    getChildren: (element) => element.nodes,
+    getParent: (element) => element.parent,
+    getChildAtIndex: (element, i) => element.nodes[i],
+    getChildsIndex: (parent, element) => parent.nodes.indexOf(element));
 
 class HighlightManager {
   List<Selection> currentSelections = [];
@@ -53,45 +59,49 @@ class HighlightManager {
     final endSelection = currentSelections.last;
 
     var result =
-        _nextTextElementAtOffset(startSelection.styledElement, startSelection.selection.start);
+        _nextTextElementAtOffsetBasedOnViewLogic(startSelection.styledElement, startSelection.selection.start);
     if (result == null) {
       return;
     }
-    final (startTextElement, start) = result;
-    result = _nextTextElementAtOffset(endSelection.styledElement, endSelection.selection.end);
+    final (startTextElement, startLeftOver) = result;
+    result = _nextTextElementAtOffsetBasedOnViewLogic(endSelection.styledElement, endSelection.selection.end);
     if (result == null) {
       return;
     }
-    final (endTextElement, end) = result;
+    final (endTextElement, endLeftOver) = result;
 
     StyledElement highlightMarkerElement;
 
     /// The selection starts at the start of the element
-    if (start == 0) {
-      highlightMarkerElement = _placeMarkBefore(startTextElement, endTextElement, start, end);
-    } else {
-      List<TextContentElement> splits = startTextElement.split(0, start);
-      // Split encompassed the whole range, so [startTextElement] is actually the element before the element we want to highlight.
-      if (splits.length == 1) {
-        // The next element may already have a highlight, so we check and adjust it if so, if not, we create a new one.
-        highlightMarkerElement =
-            _nextHighlightElementBeforeAnyTextElementOrNextTextElement(splits[0]);
-        if (highlightMarkerElement is TextContentElement) {
-          throw StateError(
-              "I think this should be possible if the previous comments hold, but I may be wrong in the previous comments. If this is thrown, then obviously this is possible, so replicate and fix.");
-        } else {
-          int range;
-          if (startTextElement == endTextElement) {
-            range = end - start;
-          } else {
-            range = _characterCountUntilNode(splits[0], endTextElement) + end - start;
-          }
-          highlightMarkerElement.node.attributes["range"] = "$range";
-        }
+    if (startLeftOver == 0) {
+      int range =
+          characterCountUntilStyledElement(startTextElement, endTextElement).last.$1 + endLeftOver - startLeftOver;
+      highlightMarkerElement = placeMarkBefore(startTextElement, range);
+    }
+    // if true, [startTextElement] is actually the element before the element we want to highlight.
+    if (startLeftOver == startTextElement.text.length) {
+      // really is highlightMarkerElementOrTextElement
+      highlightMarkerElement =
+          nextHighlightElementBeforeAnyTextElementOrNextTextElement(startTextElement);
+      if (highlightMarkerElement is TextContentElement) {
+        int range = characterCountUntilStyledElement(highlightMarkerElement, endTextElement).last.$1 +
+            endLeftOver -
+            startLeftOver;
+        highlightMarkerElement = placeMarkBefore(startTextElement, range);
       } else {
-        assert(splits.length == 2);
-        highlightMarkerElement = _placeMarkBefore(splits[1], endTextElement, start, end);
+        assert(highlightMarkerElement.node.attributes["range"] != null, "If this is actually a highlight marker element, it should have an `range` attribute.");
+        int range = characterCountUntilStyledElement(startTextElement, endTextElement).last.$1 +
+            endLeftOver -
+            startLeftOver;
+        highlightMarkerElement.node.attributes["range"] = "$range";
       }
+    } else {
+      List<TextContentElement> splits = startTextElement.split(0, startLeftOver);
+      assert(splits.length == 2);
+      int range = characterCountUntilStyledElement(startTextElement, endTextElement).last.$1 +
+            endLeftOver -
+            startLeftOver;
+      highlightMarkerElement = placeMarkBefore(splits[1], range);
     }
 
     const MarkBuiltIn().addColorForRangeIfPresent(highlightMarkerElement);
@@ -103,34 +113,39 @@ class HighlightManager {
   }
 }
 
-StyledElement _placeMarkBefore(
-    TextContentElement placeBeforeElement, TextContentElement endTextElement, int start, int end) {
-  int range;
-  if (placeBeforeElement == endTextElement) {
-    range = end - start;
-  } else {
-    range = _characterCountUntilNode(placeBeforeElement, endTextElement) + end;
-  }
+StyledElement placeMarkBefore(TextContentElement placeBeforeElement, int range,
+    {Color? color, bool willConnectInDom = true}) {
   final markNode = dom.Element.tag("o-mark")
     ..attributes["id"] = _generateUniqueHtmlId()
     ..attributes["range"] = "$range";
-  Color backgroundColor = MarkBuiltIn.defaultHighlightColor;
+  Color backgroundColor;
+  if (color == null) {
+    backgroundColor = MarkBuiltIn.defaultHighlightColor;
+  } else {
+    backgroundColor = color;
+    markNode.attributes["color"] = const ColorConverter().toJson(backgroundColor);
+  }
   StyledElement highlightMarkerElement = StyledElement(
     style: placeBeforeElement.style.copyOnlyInherited(Style(backgroundColor: backgroundColor)),
     node: markNode,
     nodeToIndex: placeBeforeElement.nodeToIndex,
   )..attributes["range"] = "$range";
-  placeBeforeElement.insertBefore(highlightMarkerElement);
+  if (willConnectInDom) {
+    placeBeforeElement.insertBefore(highlightMarkerElement);
+  } else {
+    placeBeforeElement.insertBeforeDoNotConnectNode(highlightMarkerElement);
+  }
   return highlightMarkerElement;
 }
 
-/// Gets the next [TextContentElement]. Also returns the number of line breaks, since these, count as a item during selection.
+/// Gets the next [TextContentElement] at the offset and returns any leftover.
+/// This is based on view logic, not backing data i.e. how the view determines offset.
 /// Line breaks are considered 1 in the offset (since there are counted as 1 in selections as well).
 //todo are other elements like an image or another styledelement counted as one as well?
-(TextContentElement, int)? _nextTextElementAtOffset(StyledElement styledElement, int offset) {
+(TextContentElement, int)? _nextTextElementAtOffsetBasedOnViewLogic(StyledElement styledElement, int offset) {
   assert(offset >= 0);
   int currentOffset = 0;
-  for (final element in nodeTraversal.postOrderIterable(styledElement)) {
+  for (final element in elementTraversal.postOrderIterable(styledElement)) {
     if (element is! TextContentElement) {
       if (element is LinebreakContentElement) {
         currentOffset += 1;
@@ -150,9 +165,9 @@ StyledElement _placeMarkBefore(
 }
 
 /// Gets the next highlight elment (element with "range" attribute).
-StyledElement _nextHighlightElementBeforeAnyTextElementOrNextTextElement(
+StyledElement nextHighlightElementBeforeAnyTextElementOrNextTextElement(
     StyledElement styledElement) {
-  for (final element in nodeTraversal.postOrderContinuationIterable(styledElement).skip(1)) {
+  for (final element in elementTraversal.postOrderContinuationIterable(styledElement).skip(1)) {
     if (element.node.attributes.containsKey("range")) {
       return element;
     }
@@ -163,29 +178,52 @@ StyledElement _nextHighlightElementBeforeAnyTextElementOrNextTextElement(
   throw Exception("There is no next element.");
 }
 
+/// This and the above need to be kept in sync
 /// Counts the characters in [start,end) range skipping any text nodes that are just a single whitespace - see [Guarentees.md] for why.
-int _characterCountUntilNode(StyledElement start, StyledElement end) {
-  bool isFound = false;
+//todo delete above?
+Iterable<(int,StyledElement)> characterCountUntilStyledElement(StyledElement start, [StyledElement? end]) sync* {
   int count = 0;
-  for (final element in nodeTraversal.preOrderContinuationIterable(start)) {
+  for (final element in elementTraversal.preOrderContinuationIterable(start)) {
     if (element == end) {
-      isFound = true;
-      break;
+      yield (count, element);
+      return;
     }
     final node = element.node;
-    if (node is! dom.Text) {
+    if (element is! TextContentElement) {
+      yield (count, element);
       continue;
     }
-    if (node.text == " ") {
+    if (element.text == " ") {
+      yield (count, element);
       continue;
     }
-    count += node.text.length;
-  }
-  if (isFound) {
-    return count;
+    count += element.text.length;
+    yield (count, element);
   }
   throw ArgumentError("start is not before end in tree.");
 }
+
+/// This and the above need to be kept in sync
+// Iterable<(int,dom.Node)> characterCountUntilNode(dom.Node start, dom.Node end) sync* {
+//   int count = 0;
+//   for (final node in nodeTraversal.preOrderContinuationIterable(start)) {
+//     if (node == end) {
+//       yield (count, node);
+//       return;
+//     }
+//     if (node is! dom.Text) {
+//       yield (count, node);
+//       continue;
+//     }
+//     if (node.text == " ") {
+//       yield (count, node);
+//       continue;
+//     }
+//     count += node.text.length;
+//     yield (count, node);
+//   }
+//   throw ArgumentError("start is not before end in tree.");
+// }
 
 String _generateUniqueHtmlId() {
   final randomGen = Random(DateTime.now().microsecondsSinceEpoch);
