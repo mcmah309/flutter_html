@@ -16,6 +16,7 @@ export 'package:flutter_html/src/extension/html_extension.dart';
 export 'package:flutter_html/src/html_parser.dart';
 //export style api
 export 'package:flutter_html/src/style.dart';
+export 'package:flutter_html/src/tree/highlight_element.dart';
 export 'package:flutter_html/src/tree/interactable_element.dart';
 export 'package:flutter_html/src/tree/replaced_element.dart';
 export 'package:flutter_html/src/tree/styled_element.dart';

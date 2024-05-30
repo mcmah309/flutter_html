@@ -71,7 +71,7 @@ class HtmlParser extends StatefulWidget {
     const RubyBuiltIn(),
     const DetailsElementBuiltIn(),
     const StyledElementBuiltIn(),
-    const MarkBuiltIn(),
+    const HighlightBuiltIn(),
     const LineBreakBuiltIn(),
     const TextBuiltIn(),
   ];
@@ -164,6 +164,7 @@ class _HtmlParserState extends State<HtmlParser> {
         node: widget.htmlData,
         nodeToIndex: widget.nodeToIndex,
         style: Style.fromTextStyle(DefaultTextStyle.of(context).style));
+    widget.highlightManager.setRoot(root);
     prepareTree(root);
     super.didChangeDependencies();
   }
