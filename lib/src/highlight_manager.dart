@@ -109,11 +109,11 @@ class HighlightManager {
     for (int i = 0; i < countsAndElements.length; i++) {
       var (count, element) = countsAndElements[i];
       do {
-        if (element is! TextContentElement || count + element.text.length < mark.from) {
+        if (element is! TextContentElement || count + element.text.length <= mark.from) {
           continue i;
         }
         int startPosition = mark.from - count;
-        assert(startPosition < element.text.length);
+        assert(startPosition < element.text.length, "The start position is actually not in this element.");
         final (highlightElement, nextTextElement) =
             _createHighlightElement(element, startPosition, mark.to - mark.from);
         _currentHighlights.add(highlightElement);
