@@ -46,7 +46,7 @@ class TagExtension extends HtmlExtension {
   Set<String> get supportedTags => tagsToExtend;
 
   @override
-  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
+  InlineSpan build(ExtensionContext context, MarkManager markManager) {
     return builder(context);
   }
 }

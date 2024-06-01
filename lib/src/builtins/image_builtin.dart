@@ -75,7 +75,7 @@ class ImageBuiltIn extends HtmlExtension {
   }
 
   @override
-  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
+  InlineSpan build(ExtensionContext context, MarkManager markManager) {
     final element = context.styledElement as ImageElement;
 
     // final imageStyle = Style(
@@ -89,7 +89,7 @@ class ImageBuiltIn extends HtmlExtension {
     } else if (_matchesAssetImage(context)) {
       child = _assetImageRender(context, element);
     } else if (_matchesNetworkImage(context)) {
-      child = _networkImageRender(context, element, highlightManager);
+      child = _networkImageRender(context, element, markManager);
     } else {
       // Our matcher went a little overboard and matched
       // something we can't render
@@ -100,7 +100,7 @@ class ImageBuiltIn extends HtmlExtension {
       child: CssBoxWidget(
         styledElement: context.styledElement!,
         childIsReplaced: true,
-        highlightManager: highlightManager,
+        markManager: markManager,
         child: child,
       ),
     );
@@ -198,12 +198,12 @@ class ImageBuiltIn extends HtmlExtension {
   }
 
   Widget _networkImageRender(
-      ExtensionContext context, StyledElement styledElement, HighlightManager highlightManager) {
+      ExtensionContext context, StyledElement styledElement, MarkManager markManager) {
     final element = context.styledElement as ImageElement;
 
     return CssBoxWidget(
       styledElement: styledElement,
-      highlightManager: highlightManager,
+      markManager: markManager,
       childIsReplaced: true,
       child: Image.network(
         element.src,

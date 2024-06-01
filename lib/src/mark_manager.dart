@@ -5,7 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' hide RenderParagraph;
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_html/src/tree/highlight_element.dart';
+import 'package:flutter_html/src/tree/mark_element.dart';
 import 'package:flutter_html/src/tree/replaced_element.dart';
 import 'package:flutter_html/src/tree/styled_element.dart';
 import 'package:flutter_tools/flutter_tools.dart';
@@ -30,79 +30,70 @@ ParentedTreeTraversal<dom.Node> nodeTraversal = ParentedTreeTraversal(
     getChildAtIndex: (element, i) => element.nodes[i],
     getChildsIndex: (parent, element) => parent.nodes.indexOf(element));
 
-/// A highlight range.
-class Highlight {
-  int from;
-  int to;
+sealed class MarkEvent {}
 
-  Highlight(this.from, this.to);
+class MarkIconTappedEvent extends MarkEvent {
+  MarkElement markElement;
+
+  MarkIconTappedEvent(this.markElement);
 }
 
-/// Manages interactions with the highlight system.
-class HighlightManager {
+/// Manages interactions with the mark/comment system.
+class MarkManager {
   static const defaultHighlightColor = Color.fromARGB(150, 255, 229, 127);
 
   late StyledElement _root;
 
-  /// Selections the highlight manager is aware of and can be turned into a [HighlightElement] when
-  /// [createHighlightElementFromCurrentSelections] is called.
+  /// Selections this is aware of and can be turned into a [MarkElement] when
+  /// [createMarkElementFromCurrentSelections] is called.
   final List<Selection> _currentSelections = [];
 
-  /// List of highlights that have already been added to the tree. Needed for so can be removed when a new set of marks
+  /// List of marks that have already been added to the tree. Needed for so can be removed when a new set of marks
   /// is received.
-  final List<HighlightElement> _currentHighlights = [];
+  final List<MarkElement> _currentMarks = [];
 
-  //************************************************************************//
-
-  @internal
-  void setRoot(StyledElement root) {
-    _root = root;
-  }
+  final List<void Function(MarkEvent event)> _listeners = [];
 
   //************************************************************************//
 
   /// Traverses the tree from this element, adding the color style to all [StyledElement]s in the range.
-  static void addColorForRange(HighlightElement element) {
-    String? colorStr = element.attributes["color"];
-    Color color;
-    if (colorStr == null) {
-      // Colors.amberAccent.shade100 with 150 transparency
-      color = defaultHighlightColor;
-    } else {
-      color = const ColorConverter().fromJson(colorStr);
-      if (color == const Color.fromARGB(0, 0, 0, 0)) {
-        color = defaultHighlightColor;
-      }
-    }
-    _traverseAndAddStyle(element, Style(backgroundColor: color), Cell<int>(element.range), 0);
-  }
-
-  static Highlight getHighlightForHighlightElement(HighlightElement highlightElement) {
-    StyledElement root = highlightElement;
-    while (root.parent != null) {
-      root = root.parent!;
-    }
-    int start = _characterCountUntilStyledElement(root, highlightElement).last.$1;
-    int end = start + highlightElement.range;
-    return Highlight(start, end);
+  static void addColorForRange(MarkElement element) {
+    _traverseAndAddStyle(element, Style(backgroundColor: element.mark.color), Cell<int>(element.mark.range), 0);
   }
 
   //************************************************************************//
 
-  /// Clears the old marks and adds the new marks as highlights in the tree.
-  void setMarks(List<Highlight> marks) {
-    for (final alreadyAddedElement in _currentHighlights) {
+  void registerMarkListener(void Function(MarkEvent event) callback) {
+    _listeners.add(callback);
+  }
+
+  void removeMarkListener(void Function(MarkEvent event) callback) {
+    _listeners.removeWhere((element) => element == callback);
+  }
+
+  void markTapped(MarkElement element) {
+    final event = MarkIconTappedEvent(element);
+    for (final listener in _listeners) {
+      listener(event);
+    }
+  }
+
+  //************************************************************************//
+
+  /// Clears the old marks and adds the new marks as marks in the tree.
+  void setMarks(List<Mark> marks) {
+    for (final alreadyAddedElement in _currentMarks) {
       alreadyAddedElement.disconnectFromParent();
     }
-    _currentHighlights.clear();
+    _currentMarks.clear();
     if (marks.isEmpty) {
       return;
     }
     marks.sort((e1, e2) => e1.from - e2.from);
-    final Queue<Highlight> marksToAdd = Queue()..addAll(marks);
+    final Queue<Mark> marksToAdd = Queue()..addAll(marks);
 
-    Highlight mark = marksToAdd.removeFirst();
-    List<HighlightElement> highlightElements = [];
+    Mark mark = marksToAdd.removeFirst();
+    List<MarkElement> markElements = [];
     // toList() to avoid concurrent modification
     final countsAndElements = _characterCountUntilStyledElement(_root).toList(growable: false);
     i:
@@ -113,10 +104,11 @@ class HighlightManager {
           continue i;
         }
         int startPosition = mark.from - count;
-        assert(startPosition < element.text.length, "The start position is actually not in this element.");
-        final (highlightElement, nextTextElement) =
-            _createHighlightElement(element, startPosition, mark.to - mark.from);
-        _currentHighlights.add(highlightElement);
+        assert(startPosition < element.text.length,
+            "The start position is actually not in this element.");
+        final (markElement, nextTextElement) =
+            _createMarkElement(element, startPosition, mark);
+        _currentMarks.add(markElement);
         if (marksToAdd.isEmpty) {
           return;
         }
@@ -128,8 +120,8 @@ class HighlightManager {
     if (marksToAdd.isNotEmpty) {
       Log.e("Could not apply all marks, there are still ${marksToAdd.length} marks to apply.");
     }
-    for (final highlightElement in highlightElements) {
-      addColorForRange(highlightElement);
+    for (final markElement in markElements) {
+      addColorForRange(markElement);
     }
   }
 
@@ -150,7 +142,7 @@ class HighlightManager {
   }
 
   /// Marks all current selections
-  HighlightElement? createHighlightElementFromCurrentSelections() {
+  MarkElement? createMarkElementFromCurrentSelections() {
     _currentSelections
         .sortBy<num>((element) => element.styledElement.nodeToIndex[element.styledElement.node]!);
     // For debugging
@@ -175,17 +167,26 @@ class HighlightManager {
     assert(endLeftOver != endTextElement.text.length,
         "This if this is true, then the element should actually be the next element");
 
+    int from = _characterCountUntilStyledElement(_root, startTextElement).last.$1 - startLeftOver;
     int range = _characterCountUntilStyledElement(startTextElement, endTextElement).last.$1 +
         endLeftOver -
         startLeftOver;
-    final (highlightMarkerElement, _) =
-        _createHighlightElement(startTextElement, startLeftOver, range);
+    assert(range > 0);
+    final (markMarkerElement, _) =
+        _createMarkElement(startTextElement, startLeftOver, Mark(from: from, to: from + range));
 
-    addColorForRange(highlightMarkerElement);
+    addColorForRange(markMarkerElement);
 
     _currentSelections.clear();
 
-    return highlightMarkerElement;
+    return markMarkerElement;
+  }
+
+  //************************************************************************//
+
+  @internal
+  void setRoot(StyledElement root) {
+    _root = root;
   }
 }
 
@@ -238,56 +239,50 @@ void _traverseAndAddStyleDownInclusive(
 
 //************************************************************************//
 
-/// Creates a [HighlightElement] and returns with the next [TextContentElement]. The [TextContentElement] will be the [startElement]
+/// Creates a [MarkElement] and returns with the next [TextContentElement]. The [TextContentElement] will be the [startElement]
 /// if [startPosition] is 0, otherwise a split of [startElement] is returned.
 ///
-/// You will likely need to call [addColorForRange] for the returned [HighlightElement]. This is not done inside
-/// as this can cause concurrent modificaition if [_createHighlightElement] is called inside a generator emitting [StyledElement] nodes.
-(HighlightElement, TextContentElement) _createHighlightElement(
-    TextContentElement startTextElement, int startPosition, int range) {
+/// You will likely need to call [addColorForRange] for the returned [MarkElement]. This is not done inside
+/// as this can cause concurrent modificaition if [_createMarkElement] is called inside a generator emitting [StyledElement] nodes.
+(MarkElement, TextContentElement) _createMarkElement(
+    TextContentElement startTextElement, int startPosition, Mark mark) {
   assert(startTextElement.text.length != startPosition,
       "The start element in not correct, it should be the next one with position 0");
-  HighlightElement highlightMarkerElement;
+  MarkElement markMarkerElement;
   TextContentElement nextTextElement;
 
   /// The selection starts at the start of the element
   if (startPosition == 0) {
     nextTextElement = startTextElement;
-    highlightMarkerElement = _placeMarkBefore(nextTextElement, range);
+    markMarkerElement = _placeMarkBefore(nextTextElement, mark);
   } else {
     List<TextContentElement> splits = startTextElement.split(0, startPosition);
     assert(splits.length == 2);
     nextTextElement = splits[1];
-    highlightMarkerElement = _placeMarkBefore(nextTextElement, range);
+    markMarkerElement = _placeMarkBefore(nextTextElement, mark);
   }
 
-  return (highlightMarkerElement, nextTextElement);
+  return (markMarkerElement, nextTextElement);
 }
 
-/// Creates and places the [HighlightElement] before the [placeBeforeElement] element.
-HighlightElement _placeMarkBefore(TextContentElement placeBeforeElement, int range,
-    {Color? color, bool willConnectInDom = true}) {
-  final markNode = dom.Element.tag("o-mark")
-    ..attributes["id"] = _generateUniqueHtmlId()
-    ..attributes["range"] = "$range";
-  Color backgroundColor;
-  if (color == null) {
-    backgroundColor = HighlightManager.defaultHighlightColor;
-  } else {
-    backgroundColor = color;
-    markNode.attributes["color"] = const ColorConverter().toJson(backgroundColor);
-  }
-  HighlightElement highlightMarkerElement = HighlightElement(
-    range: range,
+/// Creates and places the [MarkElement] before the [placeBeforeElement] element.
+MarkElement _placeMarkBefore(TextContentElement placeBeforeElement, Mark mark, 
+    {bool willConnectInDom = true}) {
+  final markNode = dom.Element.tag("o-mark");
+    //..attributes["id"] = mark.id;
+    // ..attributes["range"] = "${mark.range}"
+    // ..attributes["color"] = const ColorConverter().toJson(mark.color);
+  MarkElement markMarkerElement = MarkElement(
+    mark: mark,
     node: markNode,
     nodeToIndex: placeBeforeElement.nodeToIndex,
   );
   if (willConnectInDom) {
-    placeBeforeElement.insertBefore(highlightMarkerElement);
+    placeBeforeElement.insertBefore(markMarkerElement);
   } else {
-    placeBeforeElement.insertBeforeDoNotConnectNode(highlightMarkerElement);
+    placeBeforeElement.insertBeforeDoNotConnectNode(markMarkerElement);
   }
-  return highlightMarkerElement;
+  return markMarkerElement;
 }
 
 /// Gets the next [TextContentElement] at the offset and returns with any left over offset in the returning element.
@@ -339,12 +334,6 @@ Iterable<(int, StyledElement)> _characterCountUntilStyledElement(StyledElement s
   if (end != null) {
     throw ArgumentError("start is not before end in tree.");
   }
-}
-
-String _generateUniqueHtmlId() {
-  final randomGen = Random(DateTime.now().microsecondsSinceEpoch);
-  const validChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  return List.generate(15, (index) => validChars[randomGen.nextInt(validChars.length)]).join();
 }
 
 class Selection {

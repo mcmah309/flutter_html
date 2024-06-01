@@ -8,7 +8,7 @@ import 'text.dart';
 class StyledElementWidget extends StatelessWidget {
   const StyledElementWidget(
     this.styledElement,
-    this.highlightManager,
+    this.markManager,
     this.textSpan, {
     super.key,
     this.rebuild,
@@ -27,7 +27,7 @@ class StyledElementWidget extends StatelessWidget {
   });
 
   final StyledElement styledElement;
-  final HighlightManager highlightManager;
+  final MarkManager markManager;
   final InlineSpan textSpan;
   final void Function()? rebuild;
 
@@ -49,7 +49,7 @@ class StyledElementWidget extends StatelessWidget {
     return Text.rich(
       textSpan,
       onSelectionEvent: (selection, event) =>
-          highlightManager.registerSelectionEvent(styledElement, selection, event),
+          markManager.registerSelectionEvent(styledElement, selection, event),
       key: key,
       style: style,
       strutStyle: strutStyle,

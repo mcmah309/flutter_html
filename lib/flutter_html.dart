@@ -16,7 +16,7 @@ export 'package:flutter_html/src/extension/html_extension.dart';
 export 'package:flutter_html/src/html_parser.dart';
 //export style api
 export 'package:flutter_html/src/style.dart';
-export 'package:flutter_html/src/tree/highlight_element.dart';
+export 'package:flutter_html/src/tree/mark_element.dart';
 export 'package:flutter_html/src/tree/interactable_element.dart';
 export 'package:flutter_html/src/tree/replaced_element.dart';
 export 'package:flutter_html/src/tree/styled_element.dart';
@@ -24,7 +24,7 @@ export 'package:flutter_html/src/tree/styled_element.dart';
 export 'package:flutter_html/src/widgets/css_box_widget.dart';
 export 'package:flutter_html/src/widgets/styled_element_widget.dart';
 
-export 'src/highlight_manager.dart';
+export 'src/mark_manager.dart';
 
 typedef DocumentCallback = Function(
     dom.Element document, Map<dom.Node, int> nodeToIndex, Cause cause);
@@ -59,7 +59,7 @@ class Html extends StatefulWidget {
     Key? key,
     GlobalKey? anchorKey,
     required this.data,
-    required this.highlightManager,
+    required this.markManager,
     this.postPrepareTree,
     this.postStyleTree,
     this.onLinkTap,
@@ -82,7 +82,7 @@ class Html extends StatefulWidget {
     Key? key,
     GlobalKey? anchorKey,
     required dom.Document? document,
-    required this.highlightManager,
+    required this.markManager,
     this.postPrepareTree,
     this.postStyleTree,
     this.onLinkTap,
@@ -105,7 +105,7 @@ class Html extends StatefulWidget {
     Key? key,
     GlobalKey? anchorKey,
     required this.documentElement,
-    required this.highlightManager,
+    required this.markManager,
     this.postPrepareTree,
     this.postStyleTree,
     this.onLinkTap,
@@ -132,7 +132,7 @@ class Html extends StatefulWidget {
   /// The HTML data passed to the widget as a pre-processed [dom.Element]
   final dom.Element? documentElement;
 
-  final HighlightManager highlightManager;
+  final MarkManager markManager;
 
   /// Called after all tree preparing has been completed
   final void Function(StyledElement)? postPrepareTree;
@@ -230,7 +230,7 @@ class _HtmlState extends State<Html> {
       extensions: widget.extensions,
       doNotRenderTheseTags: widget.doNotRenderTheseTags,
       onlyRenderTheseTags: widget.onlyRenderTheseTags,
-      highlightManager: widget.highlightManager,
+      markManager: widget.markManager,
     );
   }
 }

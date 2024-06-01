@@ -40,7 +40,7 @@ class HtmlParser extends StatefulWidget {
   final Set<String>? onlyRenderTheseTags;
   final OnTap? internalOnAnchorTap;
   final Html? root;
-  final HighlightManager highlightManager;
+  final MarkManager markManager;
 
   HtmlParser({
     required super.key,
@@ -56,7 +56,7 @@ class HtmlParser extends StatefulWidget {
     required this.extensions,
     required this.doNotRenderTheseTags,
     required this.onlyRenderTheseTags,
-    required this.highlightManager,
+    required this.markManager,
     this.root,
   }) : internalOnAnchorTap = onAnchorTap ??
       (key != null ? _handleAnchorTap(key, onLinkTap) : onLinkTap);
@@ -71,7 +71,7 @@ class HtmlParser extends StatefulWidget {
     const RubyBuiltIn(),
     const DetailsElementBuiltIn(),
     const StyledElementBuiltIn(),
-    const HighlightBuiltIn(),
+    const MarkBuiltIn(),
     const LineBreakBuiltIn(),
     const TextBuiltIn(),
   ];
@@ -130,14 +130,14 @@ class HtmlParser extends StatefulWidget {
   /// Builds the StyledElement into an InlineSpan using one of the built-ins
   /// or HtmlExtensions available. If none of the extensions matches, returns
   /// an empty TextSpan.
-  InlineSpan buildFromExtension(ExtensionContext extensionContext, HighlightManager highlightManager, {
+  InlineSpan buildFromExtension(ExtensionContext extensionContext, MarkManager markManager, {
     Set<HtmlExtension> extensionsToIgnore = const {},
   }) {
     // Loop through every extension and see if it can handle this node
     for (final extension in extensions) {
       if (!extensionsToIgnore.contains(extension) &&
           extension.matches(extensionContext)) {
-        return extension.build(extensionContext,highlightManager);
+        return extension.build(extensionContext,markManager);
       }
     }
 
@@ -145,7 +145,7 @@ class HtmlParser extends StatefulWidget {
     for (final builtIn in builtIns) {
       if (!extensionsToIgnore.contains(builtIn) &&
           builtIn.matches(extensionContext)) {
-        return builtIn.build(extensionContext,highlightManager);
+        return builtIn.build(extensionContext,markManager);
       }
     }
 
@@ -164,7 +164,7 @@ class _HtmlParserState extends State<HtmlParser> {
         node: widget.htmlData,
         nodeToIndex: widget.nodeToIndex,
         style: Style.fromTextStyle(DefaultTextStyle.of(context).style));
-    widget.highlightManager.setRoot(root);
+    widget.markManager.setRoot(root);
     prepareTree(root);
     super.didChangeDependencies();
   }
@@ -195,7 +195,7 @@ class _HtmlParserState extends State<HtmlParser> {
       children: [buildTree(root)],
       shrinkWrap: widget.shrinkWrap,
       top: true,
-      highlightManager: widget.highlightManager,
+      markManager: widget.markManager,
     );
   }
 
@@ -432,6 +432,6 @@ class _HtmlParserState extends State<HtmlParser> {
       return const TextSpan(text: "");
     }
 
-    return widget.buildFromExtension(extensionContext, widget.highlightManager);
+    return widget.buildFromExtension(extensionContext, widget.markManager);
   }
 }

@@ -24,7 +24,7 @@ class DetailsElementBuiltIn extends HtmlExtension {
   }
 
   @override
-  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
+  InlineSpan build(ExtensionContext context, MarkManager markManager) {
     final childList = context.buildChildrenMapMemoized!;
     final children = childList.values;
 
@@ -41,7 +41,7 @@ class DetailsElementBuiltIn extends HtmlExtension {
               ? CssBoxWidgetWithInlineSpanChildren(
                   children: firstChild == null ? [] : [firstChild],
                   styledElement: context.styledElement!,
-                  highlightManager: highlightManager,
+                  markManager: markManager,
                 )
               : const Text("Details"),
           children: [
@@ -51,7 +51,7 @@ class DetailsElementBuiltIn extends HtmlExtension {
                   ? children.skip(1).toList()
                   : children.toList(),
               styledElement: context.styledElement!,
-              highlightManager: highlightManager,
+              markManager: markManager,
             ),
           ]),
     );

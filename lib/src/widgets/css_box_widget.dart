@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart' hide RichText, Text;
 import 'package:flutter/rendering.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_html/src/highlight_manager.dart';
+import 'package:flutter_html/src/mark_manager.dart';
 
 import 'basic.dart' hide Directionality;
 import 'text.dart';
@@ -14,7 +14,7 @@ class CssBoxWidgetWithInlineSpanChildren extends StatelessWidget {
       {super.key,
       required this.children,
       required this.styledElement,
-      required this.highlightManager,
+      required this.markManager,
       this.textDirection,
       this.childIsReplaced = false,
       this.shrinkWrap = false,
@@ -32,14 +32,14 @@ class CssBoxWidgetWithInlineSpanChildren extends StatelessWidget {
 
   final bool top;
 
-  final HighlightManager highlightManager;
+  final MarkManager markManager;
 
   @override
   Widget build(BuildContext context) {
-    final child = _generateWidgetChild(context, children, styledElement, highlightManager);
+    final child = _generateWidgetChild(context, children, styledElement, markManager);
     return CssBoxWidget(
         styledElement: styledElement,
-        highlightManager: highlightManager,
+        markManager: markManager,
         textDirection: textDirection,
         childIsReplaced: childIsReplaced,
         shrinkWrap: shrinkWrap,
@@ -53,7 +53,7 @@ class CssBoxWidget extends StatelessWidget {
       {super.key,
       required this.child,
       required this.styledElement,
-      required this.highlightManager,
+      required this.markManager,
       this.textDirection,
       this.childIsReplaced = false,
       this.shrinkWrap = false,
@@ -86,12 +86,12 @@ class CssBoxWidget extends StatelessWidget {
   /// For the root widget, so textScaleFactor, etc are only applied once
   final bool top;
 
-  final HighlightManager highlightManager;
+  final MarkManager markManager;
 
   @override
   Widget build(BuildContext context) {
     final markerBox = styledElement.style.listStylePosition == ListStylePosition.outside
-        ? _generateMarkerBoxSpan(styledElement, highlightManager)
+        ? _generateMarkerBoxSpan(styledElement, markManager)
         : null;
 
     final direction = _checkTextDirection(context, textDirection);
@@ -151,7 +151,7 @@ class CssBoxWidget extends StatelessWidget {
 }
 
 // css markers https://developer.mozilla.org/en-US/docs/Web/CSS/::marker
-InlineSpan? _generateMarkerBoxSpan(StyledElement styledElement, HighlightManager highlightManager) {
+InlineSpan? _generateMarkerBoxSpan(StyledElement styledElement, MarkManager markManager) {
   if (styledElement.style.display == Display.listItem) {
     // First handle listStyleImage
     if (styledElement.style.listStyleImage != null) {
@@ -190,7 +190,7 @@ InlineSpan? _generateMarkerBoxSpan(StyledElement styledElement, HighlightManager
 /// Takes a list of InlineSpan children and generates a Text.rich Widget
 /// containing those children.
 Widget _generateWidgetChild(BuildContext context, List<InlineSpan> children,
-    StyledElement styledElement, HighlightManager highlightManager) {
+    StyledElement styledElement, MarkManager markManager) {
   if (children.isEmpty) {
     return Container();
   }
@@ -198,7 +198,7 @@ Widget _generateWidgetChild(BuildContext context, List<InlineSpan> children,
   // Generate an inline marker box if the list-style-position is set to
   // inside. Otherwise the marker box will be added elsewhere.
   if (styledElement.style.listStylePosition == ListStylePosition.inside) {
-    final inlineMarkerBox = _generateMarkerBoxSpan(styledElement, highlightManager);
+    final inlineMarkerBox = _generateMarkerBoxSpan(styledElement, markManager);
     if (inlineMarkerBox != null) {
       children.insert(0, inlineMarkerBox);
     }
@@ -206,7 +206,7 @@ Widget _generateWidgetChild(BuildContext context, List<InlineSpan> children,
 
   return StyledElementWidget(
     styledElement,
-    highlightManager,
+    markManager,
     TextSpan(
       style: styledElement.style.generateTextStyle(),
       children: children,

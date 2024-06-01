@@ -60,11 +60,11 @@ class ImageExtension extends ImageBuiltIn {
   }
 
   @override
-  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
+  InlineSpan build(ExtensionContext context, MarkManager markManager) {
     if (builder != null) {
       return builder!.call(context);
     } else {
-      return super.build(context, highlightManager);
+      return super.build(context, markManager);
     }
   }
 }

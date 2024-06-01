@@ -24,14 +24,14 @@ class VerticalAlignBuiltIn extends HtmlExtension {
   }
 
   @override
-  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
+  InlineSpan build(ExtensionContext context, MarkManager markManager) {
     return WidgetSpan(
       child: Transform.translate(
         offset: Offset(0, _getVerticalOffset(context.styledElement!)),
         child: CssBoxWidgetWithInlineSpanChildren(
           children: context.buildInlineSpanChildrenMemoized!,
           styledElement: context.styledElement!,
-          highlightManager: highlightManager,
+          markManager: markManager,
         ),
       ),
     );

@@ -5,14 +5,14 @@ import 'package:html/dom.dart' as dom;
 import 'package:rewind/rewind.dart';
 import 'package:rust_core/cell.dart';
 
-/// Adds a highlight mark to the to the Text elements for the specified range and color. A mark consists of highlighting and
+/// Adds a mark mark to the to the Text elements for the specified range and color. A mark consists of marking and
 /// adding a comment annotation widget
-class HighlightBuiltIn extends HtmlExtension {
-  const HighlightBuiltIn();
+class MarkBuiltIn extends HtmlExtension {
+  const MarkBuiltIn();
 
   @override
   bool matches(ExtensionContext context) {
-    return supportedTags.contains(context.elementName) && context.styledElement is HighlightElement;
+    return supportedTags.contains(context.elementName) && context.styledElement is MarkElement;
   }
 
   @override
@@ -20,25 +20,31 @@ class HighlightBuiltIn extends HtmlExtension {
         "o-mark",
       };
 
-  /// Traverse each element and add highlighting for the range, if the range
+  /// Traverse each element and add marking for the range, if the range
   /// stops in the middle of an element, split the stylized element
   @override
   void beforeProcessing(ExtensionContext context) {
-    HighlightManager.addColorForRange(context.styledElement! as HighlightElement);
+    MarkManager.addColorForRange(context.styledElement! as MarkElement);
   }
 
-  /// Adds a marker to the highlight that a comment can be attached to
+  /// Adds a marker to the mark that a comment can be attached to
   @override
-  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
-    // double markerWidth = context.styledElement!.style.fontSize!.value; //todo remove null check, log, return nada
-    // double markerHeight = markerWidth;
-    // return WidgetSpan(
-    //     child: Mark(
-    //   markerHeight: markerHeight,
-    //   markerWidth: markerWidth,
-    //   lineHeight: markerHeight,
-    // ));
-    return TextSpan();
+  InlineSpan build(ExtensionContext context, MarkManager markManager) {
+    double? markerWidth = context.styledElement?.style.fontSize?.value;
+    if (markerWidth == null) {
+      Log.e("There must be a set font size otherwise the size of markers is unknown");
+      return const TextSpan();
+    }
+    //return const TextSpan();
+    double markerHeight = markerWidth;
+    return WidgetSpan(
+        child: MarkWidget(
+          markManager: markManager,
+          markElement: context.styledElement as MarkElement,
+      markerHeight: markerHeight,
+      markerWidth: markerWidth,
+      lineHeight: markerHeight,
+    ));
   }
 }
 
@@ -53,12 +59,16 @@ class HighlightBuiltIn extends HtmlExtension {
 class MarkWidget extends StatefulWidget {
   const MarkWidget({
     super.key,
+    required this.markManager,
+    required this.markElement,
     required this.markerHeight,
     required this.markerWidth,
     required this.lineHeight,
     this.child,
   });
 
+  final MarkManager markManager;
+  final MarkElement markElement;
   final double markerHeight;
   final double markerWidth;
   final double lineHeight;
@@ -116,7 +126,7 @@ class MarkWidgetState extends State<MarkWidget> {
                     link: layerLink,
                     child: GestureDetector(
                         onTap: () {
-                          Log.w("taasgaed"); //todo
+                          widget.markManager.markTapped(widget.markElement);
                         },
                         child: Opacity(
                           opacity: 0,

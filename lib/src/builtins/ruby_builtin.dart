@@ -41,7 +41,7 @@ class RubyBuiltIn extends HtmlExtension {
   }
 
   @override
-  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
+  InlineSpan build(ExtensionContext context, MarkManager markManager) {
     StyledElement? styledElement;
     List<Widget> widgets = <Widget>[];
     final rubySize = context.parser.style['rt']?.fontSize?.value ??
@@ -70,7 +70,7 @@ class RubyBuiltIn extends HtmlExtension {
                   transform: Matrix4.translationValues(0, -(rubyYPos), 0),
                   child: CssBoxWidget(
                     styledElement: childStyledElement,
-                    highlightManager: highlightManager,
+                    markManager: markManager,
                     child: Text(
                       childStyledElement.element!.innerHtml,
                       style:
@@ -82,17 +82,17 @@ class RubyBuiltIn extends HtmlExtension {
             ),
             CssBoxWidget(
               styledElement: context.styledElement!,
-              highlightManager: highlightManager,
+              markManager: markManager,
               child: styledElement is TextContentElement
                   ? StyledElementWidget(
                       styledElement,
-                      highlightManager,
+                      markManager,
                       TextSpan(text: styledElement.text?.trim() ?? ""),
                       style: context.styledElement!.style.generateTextStyle(),
                     )
                   : StyledElementWidget(
                       styledElement,
-                      highlightManager,
+                      markManager,
                       const TextSpan(text: '!rc!'),
                     ), // TODO was context.parser.parseTree(context, node)),
             ),

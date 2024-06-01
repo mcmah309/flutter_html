@@ -39,7 +39,7 @@ class MatcherExtension extends HtmlExtension {
   }
 
   @override
-  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
+  InlineSpan build(ExtensionContext context, MarkManager markManager) {
     return builder(context);
   }
 }

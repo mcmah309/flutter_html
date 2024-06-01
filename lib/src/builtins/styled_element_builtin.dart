@@ -423,7 +423,7 @@ class StyledElementBuiltIn extends HtmlExtension {
   }
 
   @override
-  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
+  InlineSpan build(ExtensionContext context, MarkManager markManager) {
     if (context.styledElement!.style.display == Display.listItem ||
         ((context.styledElement!.style.display == Display.block ||
                 context.styledElement!.style.display == Display.inlineBlock) &&
@@ -433,7 +433,7 @@ class StyledElementBuiltIn extends HtmlExtension {
         alignment: PlaceholderAlignment.baseline,
         baseline: TextBaseline.alphabetic,
         child: CssBoxWidgetWithInlineSpanChildren(
-          highlightManager: highlightManager,
+          markManager: markManager,
           key: context.parser.key == null || context.styledElement == null
               ? null
               : AnchorKey.of(context.parser.key!, context.styledElement!),

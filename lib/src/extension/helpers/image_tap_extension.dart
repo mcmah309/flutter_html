@@ -46,7 +46,7 @@ class OnImageTapExtension extends ImageBuiltIn {
   }
 
   @override
-  InlineSpan build(ExtensionContext context, HighlightManager highlightManager) {
+  InlineSpan build(ExtensionContext context, MarkManager markManager) {
     final children = context.buildChildrenMapMemoized!;
 
     assert(
@@ -62,7 +62,7 @@ class OnImageTapExtension extends ImageBuiltIn {
           child: CssBoxWidgetWithInlineSpanChildren(
             children: children.values.toList(),
             styledElement: context.styledElement!,
-            highlightManager: highlightManager,
+            markManager: markManager,
           ),
           onTap: () {
             if (MultipleTapGestureDetector.of(buildContext) != null) {
