@@ -10,41 +10,48 @@ class MarkElement extends StyledElement {
 
   MarkElement({
     required this.mark,
+    // Style is needed to know the know the font size to make the marker. Usually the style for the proceeding element is used.
+    required super.style,
     super.parent,
     required super.node,
     required super.nodeToIndex,
-  })  : //assert(int.parse(node.attributes["range"]!) >= 0),
-        super(style: Style());
+  });
 }
-
 
 /// A mark range.
 class Mark {
-  int from;
-  int to;
-  int get range => to - from;
+  int start;
+  int end;
+  int get range => end - start;
   String? comment;
   late Color color;
 
-  Mark({required this.from, required this.to, this.comment, Color? color}){
+  Mark({required this.start, required this.end, this.comment, Color? color})
+      : assert(end - start >= 0 && start >= 0 && end >= 0) {
     this.color = color ?? MarkManager.defaultHighlightColor;
   }
 
   @override
   String toString() {
-    return "Mark: from: $from, to: $to, comment: $comment, color: $color";
+    return "Mark: from: $start, to: $end, comment: $comment, color: $color";
   }
 
   @override
   bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
     if (other is Mark) {
-      return from == other.from && to == other.to && comment == other.comment && color == other.color;
+      return start == other.start &&
+          end == other.end &&
+          comment == other.comment &&
+          color == other.color;
     }
     return false;
   }
 
   @override
-  int get hashCode => from.hashCode ^ to.hashCode ^ comment.hashCode ^ color.hashCode;
+  int get hashCode => start.hashCode ^ end.hashCode ^ comment.hashCode ^ color.hashCode;
 }
 
 // String _generateUniqueHtmlId() {

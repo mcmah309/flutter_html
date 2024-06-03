@@ -24,12 +24,6 @@ ParentedTreeTraversal<StyledElement> elementTraversal = ParentedTreeTraversal(
     getChildAtIndex: (element, i) => element.children[i],
     getChildsIndex: (parent, element) => parent.children.indexOf(element));
 
-ParentedTreeTraversal<dom.Node> nodeTraversal = ParentedTreeTraversal(
-    getChildren: (element) => element.nodes,
-    getParent: (element) => element.parent,
-    getChildAtIndex: (element, i) => element.nodes[i],
-    getChildsIndex: (parent, element) => parent.nodes.indexOf(element));
-
 sealed class MarkEvent {}
 
 class MarkIconTappedEvent extends MarkEvent {
@@ -50,7 +44,7 @@ class MarkManager {
 
   /// List of marks that have already been added to the tree. Needed for so can be removed when a new set of marks
   /// is received.
-  final List<MarkElement> _currentMarks = [];
+  final List<MarkElement> _currentMarkElements = [];
 
   final List<void Function(MarkEvent event)> _listeners = [];
 
@@ -58,7 +52,8 @@ class MarkManager {
 
   /// Traverses the tree from this element, adding the color style to all [StyledElement]s in the range.
   static void addColorForRange(MarkElement element) {
-    _traverseAndAddStyle(element, Style(backgroundColor: element.mark.color), Cell<int>(element.mark.range), 0);
+    _traverseAndAddStyle(
+        element, Style(backgroundColor: element.mark.color), Cell<int>(element.mark.range), 0);
   }
 
   //************************************************************************//
@@ -82,33 +77,31 @@ class MarkManager {
 
   /// Clears the old marks and adds the new marks as marks in the tree.
   void setMarks(List<Mark> marks) {
-    for (final alreadyAddedElement in _currentMarks) {
+    for (final alreadyAddedElement in _currentMarkElements) {
       alreadyAddedElement.disconnectFromParent();
     }
-    _currentMarks.clear();
+    _currentMarkElements.clear();
     if (marks.isEmpty) {
       return;
     }
-    marks.sort((e1, e2) => e1.from - e2.from);
+    marks.sort((e1, e2) => e1.start - e2.start);
     final Queue<Mark> marksToAdd = Queue()..addAll(marks);
 
     Mark mark = marksToAdd.removeFirst();
-    List<MarkElement> markElements = [];
     // toList() to avoid concurrent modification
     final countsAndElements = _characterCountUntilStyledElement(_root).toList(growable: false);
     i:
     for (int i = 0; i < countsAndElements.length; i++) {
       var (count, element) = countsAndElements[i];
       do {
-        if (element is! TextContentElement || count + element.text.length <= mark.from) {
+        if (element is! TextContentElement || count + element.text.length <= mark.start) {
           continue i;
         }
-        int startPosition = mark.from - count;
+        int startPosition = mark.start - count;
         assert(startPosition < element.text.length,
             "The start position is actually not in this element.");
-        final (markElement, nextTextElement) =
-            _createMarkElement(element, startPosition, mark);
-        _currentMarks.add(markElement);
+        final (markElement, nextTextElement) = _createMarkElement(element, startPosition, mark);
+        _currentMarkElements.add(markElement);
         if (marksToAdd.isEmpty) {
           return;
         }
@@ -119,9 +112,6 @@ class MarkManager {
     }
     if (marksToAdd.isNotEmpty) {
       Log.e("Could not apply all marks, there are still ${marksToAdd.length} marks to apply.");
-    }
-    for (final markElement in markElements) {
-      addColorForRange(markElement);
     }
   }
 
@@ -158,26 +148,29 @@ class MarkManager {
 
     var result = _nextTextElementAtOffsetBasedOnViewLogic(
         startSelection.styledElement, startSelection.selection.start);
-    final (startTextElement, startLeftOver) = result;
-    assert(startLeftOver != startTextElement.text.length,
-        "This if this is true, then the element should actually be the next element");
+    final (startTextElement, offfsetInStartTextElement) = result;
+    assert(offfsetInStartTextElement != startTextElement.text.length,
+        "The element should actually be the next element");
     result = _nextTextElementAtOffsetBasedOnViewLogic(
         endSelection.styledElement, endSelection.selection.end);
-    final (endTextElement, endLeftOver) = result;
-    assert(endLeftOver != endTextElement.text.length,
-        "This if this is true, then the element should actually be the next element");
+    final (endTextElement, offsetInEndTextElement) = result;
+    assert(offsetInEndTextElement != endTextElement.text.length,
+        "The element should actually be the next element");
 
-    int from = _characterCountUntilStyledElement(_root, startTextElement).last.$1 - startLeftOver;
-    int range = _characterCountUntilStyledElement(startTextElement, endTextElement).last.$1 +
-        endLeftOver -
-        startLeftOver;
-    assert(range > 0);
-    final (markMarkerElement, _) =
-        _createMarkElement(startTextElement, startLeftOver, Mark(from: from, to: from + range));
+    int from = _characterCountUntilStyledElement(_root, startTextElement).last.$1 +
+        offfsetInStartTextElement;
+    assert(from >= 0);
+    int end = _characterCountUntilStyledElement(_root, endTextElement).last.$1 + offsetInEndTextElement;
+    assert(end >= 0);
+    assert(end - from >= 0);
+    final (markMarkerElement, _) = _createMarkElement(
+        startTextElement, offfsetInStartTextElement, Mark(start: from, end: end));
 
     addColorForRange(markMarkerElement);
 
     _currentSelections.clear();
+
+    _currentMarkElements.add(markMarkerElement);
 
     return markMarkerElement;
   }
@@ -192,6 +185,7 @@ class MarkManager {
 
 //************************************************************************//
 
+/// Traversing the html changing the style to the highlight and collecting the string being highlighted.
 void _traverseAndAddStyle(StyledElement element, Style style, Cell<int> characterCount, int skip) {
   // add style to this element, if character count is smaller than length, break up and return, otherwise go down until no children, then, start going up
   // good opportunity to publish tree node. then add that as a depends to here and changed styled element to inherit from
@@ -266,14 +260,15 @@ void _traverseAndAddStyleDownInclusive(
 }
 
 /// Creates and places the [MarkElement] before the [placeBeforeElement] element.
-MarkElement _placeMarkBefore(TextContentElement placeBeforeElement, Mark mark, 
+MarkElement _placeMarkBefore(TextContentElement placeBeforeElement, Mark mark,
     {bool willConnectInDom = true}) {
   final markNode = dom.Element.tag("o-mark");
-    //..attributes["id"] = mark.id;
-    // ..attributes["range"] = "${mark.range}"
-    // ..attributes["color"] = const ColorConverter().toJson(mark.color);
+  //..attributes["id"] = mark.id;
+  // ..attributes["range"] = "${mark.range}"
+  // ..attributes["color"] = const ColorConverter().toJson(mark.color);
   MarkElement markMarkerElement = MarkElement(
     mark: mark,
+    style: placeBeforeElement.style,
     node: markNode,
     nodeToIndex: placeBeforeElement.nodeToIndex,
   );
