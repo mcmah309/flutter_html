@@ -133,25 +133,25 @@ class MarkManager {
 
   /// Marks all current selections
   MarkElement? createMarkElementFromCurrentSelections() {
-    _currentSelections
-        .sortBy<num>((element) => element.styledElement.nodeToIndex[element.styledElement.node]!);
+    if (_currentSelections.isEmpty) {
+      return null;
+    }
     // For debugging
     // for (final x in currentSelections) {
     //   print(x.styledElement.node.text!.substring(x.selection.start, x.selection.end));
     //   print("\n");
     // }
-    if (_currentSelections.isEmpty) {
-      return null;
-    }
+    _currentSelections
+        .sortBy<num>((element) => element.styledElement.nodeToIndex[element.styledElement.node]!);
     final startSelection = _currentSelections.first;
     final endSelection = _currentSelections.last;
 
-    var result = _nextTextElementAtOffsetBasedOnViewLogic(
+    var result = _nextTextElementAndOffsetBasedOnView(
         startSelection.styledElement, startSelection.selection.start);
     final (startTextElement, offfsetInStartTextElement) = result;
     assert(offfsetInStartTextElement != startTextElement.text.length,
         "The element should actually be the next element");
-    result = _nextTextElementAtOffsetBasedOnViewLogic(
+    result = _nextTextElementAndOffsetBasedOnView(
         endSelection.styledElement, endSelection.selection.end);
     final (endTextElement, offsetInEndTextElement) = result;
     assert(offsetInEndTextElement != endTextElement.text.length,
@@ -160,7 +160,8 @@ class MarkManager {
     int from = _characterCountUntilStyledElement(_root, startTextElement).last.$1 +
         offfsetInStartTextElement;
     assert(from >= 0);
-    int end = _characterCountUntilStyledElement(_root, endTextElement).last.$1 + offsetInEndTextElement;
+    int end =
+        _characterCountUntilStyledElement(_root, endTextElement).last.$1 + offsetInEndTextElement;
     assert(end >= 0);
     assert(end - from >= 0);
     final (markMarkerElement, _) = _createMarkElement(
@@ -210,10 +211,6 @@ void _traverseAndAddStyleDownInclusive(
     if (element is TextContentElement) {
       String text = element.text;
       int length = text.length;
-      // // Single string non-empty elements are not counted.
-      // if (text == " ") {
-      //   // Intentionally empty
-      // } else
       if (length > characterCount.get()) {
         final splitElement = element.split(characterCount.get());
         assert(splitElement.length == 2);
@@ -280,27 +277,26 @@ MarkElement _placeMarkBefore(TextContentElement placeBeforeElement, Mark mark,
   return markMarkerElement;
 }
 
-/// Gets the next [TextContentElement] at the offset and returns with any left over offset in the returning element.
-/// This is based on view logic, not backing data i.e. how the view determines offset.
-(TextContentElement, int) _nextTextElementAtOffsetBasedOnViewLogic(
+/// Gets the next [TextContentElement] at the offset and returns with the start offset in the returning element.
+/// [viewOffset] is based on view logic, not backing data i.e. how the view determines offset.
+(TextContentElement, int) _nextTextElementAndOffsetBasedOnView(
     StyledElement styledElement, int viewOffset) {
   assert(viewOffset >= 0);
-  int currentOffset = 0;
+  int currentOffsetInView = 0;
   for (final element in elementTraversal.postOrderIterable(styledElement)) {
+    if(element is MarkElement){
+      currentOffsetInView += 1;
+      continue;
+    }
     if (element is! TextContentElement) {
-      // // todo are other elements like an image or another styledelement counted as one as well?
-      // Line breaks are considered 1 in the offset (since there are counted as 1 in selections as well).
-      // if (element is LinebreakContentElement) {
-      //   currentOffset += 1;
-      // }
       continue;
     }
     int length = element.node.text.length;
-    if (currentOffset + length <= viewOffset) {
-      currentOffset += length;
+    if (currentOffsetInView + length <= viewOffset) {
+      currentOffsetInView += length;
       continue;
     }
-    final offsetInElement = viewOffset - currentOffset;
+    final offsetInElement = viewOffset - currentOffsetInView;
     return (element, offsetInElement);
   }
   unreachable("Expected a $TextContentElement to exist with the offset.");
@@ -319,10 +315,6 @@ Iterable<(int, StyledElement)> _characterCountUntilStyledElement(StyledElement s
       yield (count, element);
       continue;
     }
-    // if (element.text == " ") {
-    //   yield (count, element);
-    //   continue;
-    // }
     yield (count, element);
     count += element.text.length;
   }
