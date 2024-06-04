@@ -24,7 +24,6 @@ class RubyBuiltIn extends HtmlExtension {
         element: context.node as dom.Element,
         children: children,
         node: context.node,
-        nodeToIndex: context.nodeToIndex,
       );
     }
 
@@ -35,95 +34,108 @@ class RubyBuiltIn extends HtmlExtension {
       elementClasses: context.classes.toList(),
       name: context.elementName,
       node: context.node,
-      nodeToIndex: context.nodeToIndex,
       style: Style(),
     );
   }
 
   @override
   InlineSpan build(ExtensionContext context, MarkManager markManager) {
-    StyledElement? styledElement;
-    List<Widget> widgets = <Widget>[];
-    final rubySize = context.parser.style['rt']?.fontSize?.value ??
-        max(9.0, context.styledElement!.style.fontSize!.value / 2);
-    final rubyYPos = rubySize + rubySize / 2;
-    List<StyledElement> children = [];
-    context.styledElement!.children.forEachIndexed((index, element) {
-      if (!((element is TextContentElement) &&
-          (element.text ?? "").trim().isEmpty &&
-          index > 0 &&
-          index + 1 < context.styledElement!.children.length &&
-          context.styledElement!.children[index - 1] is! TextContentElement &&
-          context.styledElement!.children[index + 1] is! TextContentElement)) {
-        children.add(element);
-      }
-    });
-    for (var childStyledElement in children) {
-      if (childStyledElement.name == "rt" && styledElement != null) {
-        final widget = Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            Container(
-              alignment: Alignment.bottomCenter,
-              child: Center(
-                child: Transform(
-                  transform: Matrix4.translationValues(0, -(rubyYPos), 0),
-                  child: CssBoxWidget(
-                    styledElement: childStyledElement,
-                    markManager: markManager,
-                    child: Text(
-                      childStyledElement.element!.innerHtml,
-                      style:
-                          childStyledElement.style.generateTextStyle().copyWith(fontSize: rubySize),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            CssBoxWidget(
-              styledElement: context.styledElement!,
-              markManager: markManager,
-              child: styledElement is TextContentElement
-                  ? StyledElementWidget(
-                      styledElement,
-                      markManager,
-                      TextSpan(text: styledElement.text?.trim() ?? ""),
-                      style: context.styledElement!.style.generateTextStyle(),
-                    )
-                  : StyledElementWidget(
-                      styledElement,
-                      markManager,
-                      const TextSpan(text: '!rc!'),
-                    ), // TODO was context.parser.parseTree(context, node)),
-            ),
-          ],
-        );
-        widgets.add(widget);
-      } else {
-        styledElement = childStyledElement;
-      }
-    }
-
     return WidgetSpan(
       alignment: (context.styledElement! as ReplacedElement).alignment,
       baseline: TextBaseline.alphabetic,
-      child: Padding(
-        padding: EdgeInsets.only(top: rubySize),
-        child: Wrap(
-          key: context.parser.key == null || context.styledElement == null
-              ? null
-              : AnchorKey.of(context.parser.key!, context.styledElement!),
-          runSpacing: rubySize,
-          children: widgets.map((e) {
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              textBaseline: TextBaseline.alphabetic,
-              mainAxisSize: MainAxisSize.min,
-              children: [e],
+      child: Builder(builder: (buildContext) {
+        StyledElement? styledElement;
+        List<Widget> widgets = <Widget>[];
+        final rubySize = context.parser.style['rt']?.fontSize?.value ??
+            max(9.0, context.styledElement!.style.fontSize!.value / 2);
+        final rubyYPos = rubySize + rubySize / 2;
+        List<StyledElement> children = [];
+        context.styledElement!.children.forEachIndexed((index, element) {
+          if (!((element is TextContentElement) &&
+              (element.text ?? "").trim().isEmpty &&
+              index > 0 &&
+              index + 1 < context.styledElement!.children.length &&
+              context.styledElement!.children[index - 1] is! TextContentElement &&
+              context.styledElement!.children[index + 1] is! TextContentElement)) {
+            children.add(element);
+          }
+        });
+        for (var childStyledElement in children) {
+          if (childStyledElement.name == "rt" && styledElement != null) {
+            final widget = Stack(
+              alignment: Alignment.center,
+              children: <Widget>[
+                Container(
+                  alignment: Alignment.bottomCenter,
+                  child: Center(
+                    child: Transform(
+                      transform: Matrix4.translationValues(0, -(rubyYPos), 0),
+                      child: CssBoxWidget(
+                        styledElement: childStyledElement,
+                        markManager: markManager,
+                        child: Text(
+                          childStyledElement.element!.innerHtml,
+                          style: childStyledElement.style
+                              .generateTextStyle()
+                              .copyWith(fontSize: rubySize),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                CssBoxWidget(
+                  styledElement: context.styledElement!,
+                  markManager: markManager,
+                  child: styledElement is TextContentElement
+                      ? StyledElementWidget(
+                          rebuild: () {
+                            if (buildContext.mounted) {
+                              context.resetBuiltChildren();
+                              (buildContext as Element).markNeedsBuild();
+                            }
+                          },
+                          styledElement,
+                          markManager,
+                          TextSpan(text: styledElement.text?.trim() ?? ""),
+                          style: context.styledElement!.style.generateTextStyle(),
+                        )
+                      : StyledElementWidget(
+                          rebuild: () {
+                            if (buildContext.mounted) {
+                              context.resetBuiltChildren();
+                              (buildContext as Element).markNeedsBuild();
+                            }
+                          },
+                          styledElement,
+                          markManager,
+                          const TextSpan(text: '!rc!'),
+                        ), // TODO was context.parser.parseTree(context, node)),
+                ),
+              ],
             );
-          }).toList(),
-        ),
-      ),
+            widgets.add(widget);
+          } else {
+            styledElement = childStyledElement;
+          }
+        }
+        return Padding(
+          padding: EdgeInsets.only(top: rubySize),
+          child: Wrap(
+            key: context.parser.key == null || context.styledElement == null
+                ? null
+                : AnchorKey.of(context.parser.key!, context.styledElement!),
+            runSpacing: rubySize,
+            children: widgets.map((e) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                textBaseline: TextBaseline.alphabetic,
+                mainAxisSize: MainAxisSize.min,
+                children: [e],
+              );
+            }).toList(),
+          ),
+        );
+      }),
     );
   }
 }

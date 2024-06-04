@@ -6,6 +6,7 @@ import 'package:flutter_html/src/style.dart';
 import 'package:flutter_html/src/tree/styled_element.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/dom.dart' as html;
+import 'package:meta/meta.dart';
 
 /// Provides information about the current element on the Html tree for
 /// an [Extension] to use.
@@ -19,10 +20,9 @@ class ExtensionContext {
 
   final ExtensionContext? parent;
 
-  final Map<dom.Node, int> nodeToIndex;
-
   /// See [resetProcessing] for use.
-  bool willReprocess = false;
+  @internal
+  bool willRebuildTree = false;
 
   /// Returns the reference to the Html element if this Html node represents
   /// and element. Otherwise returns null.
@@ -110,6 +110,8 @@ class ExtensionContext {
 
   final BuildChildrenCallback? _callbackToBuildChildren;
   Map<StyledElement, InlineSpan>? _builtChildren;
+  @internal
+  Map<StyledElement, InlineSpan>? get builtChildren => _builtChildren;
 
   ExtensionContext getRoot() {
     ExtensionContext root = this;
@@ -119,7 +121,7 @@ class ExtensionContext {
     return root;
   }
 
-  /// Removes the built children and disconnects them from the tree and sets [willReprocess] to true.
+  /// Removes the built children and disconnects them from the tree and sets [willRebuildTree] to true.
   /// This will force [HtmlParser#_buildTreeRecursive] (where [_callbackToBuildChildren] is) to reprocess all steps for this
   /// element and below on rebuild, since [_builtChildren] will be null for [buildChildrenMapMemoized]
   void resetProcessing() {
@@ -136,7 +138,12 @@ class ExtensionContext {
     }
     // Do not disconnect this styled element, since it will be added back (so parent is needed) in [HtmlParser#_buildTreeRecursive]
     assert(styledElement != null && styledElement!.children.isEmpty);
-    willReprocess = true;
+    willRebuildTree = true;
+  }
+
+  /// Clears the memoized [InlineSpan]s built from the [StyledElement] children.
+  void resetBuiltChildren(){
+    _builtChildren = null;
   }
 
   void _disconnect(StyledElement styledElement) {
@@ -175,7 +182,6 @@ class ExtensionContext {
   ExtensionContext({
     required this.currentStep,
     required this.node,
-    required this.nodeToIndex,
     required this.parser,
     required this.parent,
     this.styledElement,

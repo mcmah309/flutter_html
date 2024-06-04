@@ -49,8 +49,7 @@ class TagWrapExtension extends HtmlExtension {
   }
 
   @override
-  StyledElement prepare(
-      ExtensionContext context, List<StyledElement> children) {
+  StyledElement prepare(ExtensionContext context, List<StyledElement> children) {
     return WrapperElement(
       parent: context.styledElement?.parent,
       child: context.parser.prepareFromExtension(
@@ -63,14 +62,21 @@ class TagWrapExtension extends HtmlExtension {
 
   @override
   InlineSpan build(ExtensionContext context, MarkManager markManager) {
-    final child = CssBoxWidgetWithInlineSpanChildren(
-      children: context.buildInlineSpanChildrenMemoized!,
-      styledElement: context.styledElement!,
-      markManager: markManager,
-    );
-
     return WidgetSpan(
-      child: builder.call(child),
+      child: Builder(builder: (buildContext) {
+        final child = CssBoxWidgetWithInlineSpanChildren(
+          rebuild: () {
+            if (buildContext.mounted) {
+              context.resetBuiltChildren();
+              (buildContext as Element).markNeedsBuild();
+            }
+          },
+          children: context.buildInlineSpanChildrenMemoized!,
+          styledElement: context.styledElement!,
+          markManager: markManager,
+        );
+        return builder.call(child);
+      }),
     );
   }
 }
@@ -81,7 +87,6 @@ class WrapperElement extends StyledElement {
     required StyledElement child,
   }) : super(
           node: html.Element.tag("wrapper-element"),
-          nodeToIndex: child.nodeToIndex,
           style: Style(),
           parent: parent,
           children: [child],

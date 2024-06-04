@@ -33,7 +33,6 @@ class InteractiveElementBuiltIn extends HtmlExtension {
         textDecoration: TextDecoration.underline,
       ),
       node: context.node,
-      nodeToIndex: context.nodeToIndex,
       elementId: context.id,
     );
   }
@@ -51,7 +50,7 @@ class InteractiveElementBuiltIn extends HtmlExtension {
     ExtensionContext context,
     InlineSpan childSpan,
   ) {
-    onTap() => context.parser.internalOnAnchorTap?.call(
+    onTap() => context.parser.internalOnAnchorTap(
           (context.styledElement! as InteractiveElement).href,
           context.attributes,
           (context.node as dom.Element),

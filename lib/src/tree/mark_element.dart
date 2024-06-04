@@ -14,7 +14,6 @@ class MarkElement extends StyledElement {
     required super.style,
     super.parent,
     required super.node,
-    required super.nodeToIndex,
   });
 }
 

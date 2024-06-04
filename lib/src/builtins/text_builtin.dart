@@ -20,14 +20,12 @@ class TextBuiltIn extends HtmlExtension {
     //   assert(false);
     //   return EmptyContentElement(
     //     node: context.node,
-    //     nodeToIndex: context.nodeToIndex,
     //   );
     // }
     return TextContentElement(
       style: Style(),
       element: context.node.parent,
       node: context.node as dom.Text,
-      nodeToIndex: context.nodeToIndex,
     );
   }
 

@@ -40,7 +40,6 @@ abstract class HtmlExtension {
       ExtensionContext context, List<StyledElement> children) {
     return StyledElement(
       node: context.node,
-      nodeToIndex: context.nodeToIndex,
       style: Style(),
       elementClasses: context.classes.toList(),
       elementId: context.id,

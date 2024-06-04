@@ -26,9 +26,6 @@ export 'package:flutter_html/src/widgets/styled_element_widget.dart';
 
 export 'src/mark_manager.dart';
 
-typedef DocumentCallback = Function(
-    dom.Element document, Map<dom.Node, int> nodeToIndex, Cause cause);
-
 class Html extends StatefulWidget {
   /// The `Html` widget takes HTML as input and displays a StyledElementWidget
   /// tree of the parsed HTML content.
@@ -70,7 +67,6 @@ class Html extends StatefulWidget {
     this.onlyRenderTheseTags,
     this.doNotRenderTheseTags,
     Map<String, Style>? style,
-    this.documentCallback,
   })  : documentElement = null,
         extensions = extensions ?? [],
         style = style ?? {},
@@ -93,7 +89,6 @@ class Html extends StatefulWidget {
     this.doNotRenderTheseTags,
     this.onlyRenderTheseTags,
     this.style = const {},
-    this.documentCallback,
   })  : extensions = extensions ?? [],
         data = null,
         assert(document != null),
@@ -116,7 +111,6 @@ class Html extends StatefulWidget {
     this.doNotRenderTheseTags,
     this.onlyRenderTheseTags,
     this.style = const {},
-    this.documentCallback,
   })  : extensions = extensions ?? [],
         data = null,
         assert(documentElement != null),
@@ -171,9 +165,6 @@ class Html extends StatefulWidget {
   /// An API that allows you to override the default style for any HTML element
   final Map<String, Style> style;
 
-  /// Called on init and whenever the document changes as determined by [didUpdateWidget].
-  final DocumentCallback? documentCallback;
-
   @override
   State<StatefulWidget> createState() => _HtmlState();
 }
@@ -182,19 +173,12 @@ class _HtmlState extends State<Html> {
   /// Html tag element
   late dom.Element documentElement;
 
-  /// {@macro nodeToIndex}
-  late Map<dom.Node, int> nodeToIndex;
-
   @override
   void initState() {
     super.initState();
     documentElement = widget.data != null
         ? HtmlParser.parseHTML(widget.data!)
         : widget.documentElement!;
-    nodeToIndex = NodeOrderProcessing.createNodeToIndexMap(documentElement);
-    if (widget.documentCallback != null) {
-      widget.documentCallback!(documentElement, nodeToIndex, Cause.init);
-    }
   }
 
   @override
@@ -205,12 +189,6 @@ class _HtmlState extends State<Html> {
       documentElement = widget.data != null
           ? HtmlParser.parseHTML(widget.data!)
           : widget.documentElement!;
-      nodeToIndex.clear();
-      nodeToIndex = NodeOrderProcessing.createNodeToIndexMap(documentElement);
-      if (widget.documentCallback != null) {
-        widget.documentCallback!(
-            documentElement, nodeToIndex, Cause.widgetChange);
-      }
     }
   }
 
@@ -219,7 +197,6 @@ class _HtmlState extends State<Html> {
     return HtmlParser(
       key: widget._anchorKey,
       htmlData: documentElement,
-      nodeToIndex: nodeToIndex,
       postPrepareTree: widget.postPrepareTree,
       postStyleTree: widget.postStyleTree,
       onLinkTap: widget.onLinkTap,
@@ -233,9 +210,4 @@ class _HtmlState extends State<Html> {
       markManager: widget.markManager,
     );
   }
-}
-
-enum Cause {
-  init,
-  widgetChange,
 }

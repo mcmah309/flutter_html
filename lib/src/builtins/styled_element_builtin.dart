@@ -84,14 +84,12 @@ class StyledElementBuiltIn extends HtmlExtension {
       };
 
   @override
-  StyledElement prepare(
-      ExtensionContext context, List<StyledElement> children) {
+  StyledElement prepare(ExtensionContext context, List<StyledElement> children) {
     StyledElement styledElement = StyledElement(
       name: context.elementName,
       elementId: context.id,
       elementClasses: context.classes.toList(),
       node: context.node as dom.Element,
-      nodeToIndex: context.nodeToIndex,
       children: children,
       style: Style(),
     );
@@ -124,9 +122,7 @@ class StyledElementBuiltIn extends HtmlExtension {
         break;
       case "bdo":
         TextDirection textDirection =
-            ((context.attributes["dir"] ?? "ltr") == "rtl")
-                ? TextDirection.rtl
-                : TextDirection.ltr;
+            ((context.attributes["dir"] ?? "ltr") == "rtl") ? TextDirection.rtl : TextDirection.ltr;
         styledElement.style = Style(
           direction: textDirection,
         );
@@ -219,10 +215,8 @@ class StyledElementBuiltIn extends HtmlExtension {
         styledElement.style = Style(
           color: context.attributes['color'] != null
               ? context.attributes['color']!.startsWith("#")
-                  ? ExpressionMapping.stringToColor(
-                      context.attributes['color']!)
-                  : ExpressionMapping.namedColorToColor(
-                      context.attributes['color']!)
+                  ? ExpressionMapping.stringToColor(context.attributes['color']!)
+                  : ExpressionMapping.namedColorToColor(context.attributes['color']!)
               : null,
           fontFamily: context.attributes['face']?.split(",").first,
           fontSize: context.attributes['size'] != null
@@ -427,33 +421,40 @@ class StyledElementBuiltIn extends HtmlExtension {
     if (context.styledElement!.style.display == Display.listItem ||
         ((context.styledElement!.style.display == Display.block ||
                 context.styledElement!.style.display == Display.inlineBlock) &&
-            (context.styledElement!.children.isNotEmpty ||
-                context.elementName == "hr"))) {
+            (context.styledElement!.children.isNotEmpty || context.elementName == "hr"))) {
       return WidgetSpan(
         alignment: PlaceholderAlignment.baseline,
         baseline: TextBaseline.alphabetic,
-        child: CssBoxWidgetWithInlineSpanChildren(
-          markManager: markManager,
-          key: context.parser.key == null || context.styledElement == null
-              ? null
-              : AnchorKey.of(context.parser.key!, context.styledElement!),
-          styledElement: context.styledElement!,
-          shrinkWrap: context.parser.shrinkWrap,
-          childIsReplaced: ["iframe", "img", "video", "audio"]
-              .contains(context.styledElement!.name),
-          children: context.buildChildrenMapMemoized!.entries
-              .expandIndexed((i, child) => [
-                    child.value,
-                    if (context.parser.shrinkWrap &&
-                        i != context.styledElement!.children.length - 1 &&
-                        (child.key.style.display == Display.block ||
-                            child.key.style.display == Display.listItem) &&
-                        child.key.element?.localName != "html" &&
-                        child.key.element?.localName != "body")
-                      const TextSpan(text: "\n", style: TextStyle(fontSize: 0)),
-                  ])
-              .toList(),
-        ),
+        child: Builder(builder: (buildContext) {
+          return CssBoxWidgetWithInlineSpanChildren(
+            markManager: markManager,
+            rebuild: () {
+              if (buildContext.mounted) {
+                context.resetBuiltChildren();
+                (buildContext as Element).markNeedsBuild();
+              }
+            },
+            key: context.parser.key == null || context.styledElement == null
+                ? null
+                : AnchorKey.of(context.parser.key!, context.styledElement!),
+            styledElement: context.styledElement!,
+            shrinkWrap: context.parser.shrinkWrap,
+            childIsReplaced:
+                ["iframe", "img", "video", "audio"].contains(context.styledElement!.name),
+            children: context.buildChildrenMapMemoized!.entries
+                .expandIndexed((i, child) => [
+                      child.value,
+                      if (context.parser.shrinkWrap &&
+                          i != context.styledElement!.children.length - 1 &&
+                          (child.key.style.display == Display.block ||
+                              child.key.style.display == Display.listItem) &&
+                          child.key.element?.localName != "html" &&
+                          child.key.element?.localName != "body")
+                        const TextSpan(text: "\n", style: TextStyle(fontSize: 0)),
+                    ])
+                .toList(),
+          );
+        }),
       );
     }
 

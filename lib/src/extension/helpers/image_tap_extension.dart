@@ -30,11 +30,9 @@ class OnImageTapExtension extends ImageBuiltIn {
   }
 
   @override
-  StyledElement prepare(
-      ExtensionContext context, List<StyledElement> children) {
+  StyledElement prepare(ExtensionContext context, List<StyledElement> children) {
     return ImageTapExtensionElement(
       node: html.Element.tag("img-tap"),
-      nodeToIndex: context.nodeToIndex,
       style: Style(),
       children: [
         super.prepare(context, children),
@@ -47,19 +45,24 @@ class OnImageTapExtension extends ImageBuiltIn {
 
   @override
   InlineSpan build(ExtensionContext context, MarkManager markManager) {
-    final children = context.buildChildrenMapMemoized!;
-
-    assert(
-      children.keys.isNotEmpty,
-      "The OnImageTapExtension has been thwarted! It no longer has an `img` child",
-    );
-
-    final actualImage = children.keys.first;
-
     return WidgetSpan(
       child: Builder(builder: (buildContext) {
+        final children = context.buildChildrenMapMemoized!;
+
+        assert(
+          children.keys.isNotEmpty,
+          "The OnImageTapExtension has been thwarted! It no longer has an `img` child",
+        );
+
+        final actualImage = children.keys.first;
         return GestureDetector(
           child: CssBoxWidgetWithInlineSpanChildren(
+            rebuild: () {
+              if (buildContext.mounted) {
+                context.resetBuiltChildren();
+                (buildContext as Element).markNeedsBuild();
+              }
+            },
             children: children.values.toList(),
             styledElement: context.styledElement!,
             markManager: markManager,
@@ -88,7 +91,6 @@ class ImageTapExtensionElement extends StyledElement {
     super.elementId,
     super.name,
     required super.node,
-    required super.nodeToIndex,
     required super.style,
   });
 }

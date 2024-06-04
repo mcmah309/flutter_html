@@ -17,7 +17,7 @@ class LineBreakBuiltIn extends HtmlExtension {
 
   @override
   StyledElement prepare(ExtensionContext context, List<StyledElement> children) {
-    return LinebreakContentElement(style: Style(), node: context.node, nodeToIndex: context.nodeToIndex);
+    return LinebreakContentElement(style: Style(), node: context.node);
   }
 
   @override

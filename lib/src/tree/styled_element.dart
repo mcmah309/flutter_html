@@ -19,8 +19,9 @@ class StyledElement {
   late final List<StyledElement> children;
   Style style;
   final dom.Node node;
-  final Map<dom.Node, int> nodeToIndex;
   final ListQueue<Counter> counters = ListQueue<Counter>();
+  /// A function that can rebuild the widget that is associated with the element.
+  void Function()? rebuildAssociatedWidget;
 
   //int globalCharacterCount;
 
@@ -32,7 +33,6 @@ class StyledElement {
     List<StyledElement>? children,
     required this.style,
     required this.node,
-    required this.nodeToIndex,
   }) {
     this.elementClasses = elementClasses ?? [];
     this.children = children ?? [];
@@ -92,8 +92,6 @@ class StyledElement {
     node.parentNode!.insertBefore(element.node, node);
     parent!.children.insert(parent!.children.indexOf(this), element);
     element.parent = parent!;
-    NodeOrderProcessing.reIndexNodeToIndexMapWith(nodeToIndex, element.node);
-    assert(nodeToIndex[element.node]! + 1 == nodeToIndex[node]!);
   }
 
   /// Inserts the element before, does not touch the elements node
@@ -125,6 +123,14 @@ class StyledElement {
       parent = parent.parent;
     }
     return false;
+  }
+
+  StyledElement root() {
+    StyledElement element = this;
+    while(element.parent != null){
+      element = element.parent!;
+    }
+    return element;
   }
 
   @override

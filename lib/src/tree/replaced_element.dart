@@ -18,7 +18,6 @@ abstract class ReplacedElement extends StyledElement {
     StyledElement? parent,
     List<StyledElement>? children,
     required super.node,
-    required super.nodeToIndex,
     this.alignment = PlaceholderAlignment.aboveBaseline,
   }) : super(parent: parent, children: children ?? []);
 
@@ -41,7 +40,6 @@ class TextContentElement extends ReplacedElement {
   TextContentElement({
     required Style style,
     required dom.Text node,
-    required super.nodeToIndex,
     dom.Element? element,
   }) : super(name: "[text]", style: style, node: node, elementId: "[[No ID]]");
 
@@ -136,8 +134,7 @@ class TextContentElement extends ReplacedElement {
   }) {
     return TextContentElement(
         style: style ?? this.style.copyWith(),
-        node: node ?? this.node as dom.Text,
-        nodeToIndex: nodeToIndex);
+        node: node ?? this.node as dom.Text);
   }
 
   @override
@@ -150,13 +147,12 @@ class LinebreakContentElement extends ReplacedElement {
   LinebreakContentElement({
     required super.style,
     required super.node,
-    required super.nodeToIndex,
   }) : super(name: 'br', elementId: "[[No ID]]");
 }
 
 class EmptyContentElement extends ReplacedElement {
   EmptyContentElement(
-      {required super.node, required super.nodeToIndex, String name = "empty"})
+      {required super.node, String name = "empty"})
       : super(name: name, style: Style(), elementId: "[[No ID]]");
 }
 
@@ -169,7 +165,6 @@ class RubyElement extends ReplacedElement {
     required List<StyledElement> children,
     String name = "ruby",
     required super.node,
-    required super.nodeToIndex,
   }) : super(
             name: name,
             alignment: PlaceholderAlignment.middle,

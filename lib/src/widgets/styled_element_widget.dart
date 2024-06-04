@@ -11,7 +11,7 @@ class StyledElementWidget extends StatelessWidget {
     this.markManager,
     this.textSpan, {
     super.key,
-    this.rebuild,
+    required this.rebuild,
     this.style,
     this.strutStyle,
     this.textAlign,
@@ -29,7 +29,7 @@ class StyledElementWidget extends StatelessWidget {
   final StyledElement styledElement;
   final MarkManager markManager;
   final InlineSpan textSpan;
-  final void Function()? rebuild;
+  final void Function() rebuild;
 
   final TextStyle? style;
   final StrutStyle? strutStyle;
@@ -46,6 +46,7 @@ class StyledElementWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    styledElement.rebuildAssociatedWidget = rebuild;
     return Text.rich(
       textSpan,
       onSelectionEvent: (selection, event) =>

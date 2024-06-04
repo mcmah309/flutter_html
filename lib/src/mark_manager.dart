@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' hide RenderParagraph;
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_html/src/processing/node_order.dart';
 import 'package:flutter_html/src/tree/mark_element.dart';
 import 'package:flutter_html/src/tree/replaced_element.dart';
 import 'package:flutter_html/src/tree/styled_element.dart';
@@ -14,6 +15,7 @@ import 'package:meta/meta.dart';
 import 'package:rewind/rewind.dart';
 import 'package:rust_core/cell.dart';
 import 'package:rust_core/panic.dart';
+import 'package:rust_core/result.dart';
 import 'package:tree_traversal/tree_traversal.dart';
 
 import 'widgets/paragraph.dart';
@@ -75,7 +77,9 @@ class MarkManager {
 
   //************************************************************************//
 
-  /// Clears the old marks and adds the new marks as marks in the tree.
+  /// Clears the old marks and adds the new marks as marks in the tree. You will need to trigger a rebuild
+  /// later as this will not do that and does not apply highlighting styles. This just places the mark.
+  /// See [MarkBuiltin] for application.
   void setMarks(List<Mark> marks) {
     for (final alreadyAddedElement in _currentMarkElements) {
       alreadyAddedElement.disconnectFromParent();
@@ -120,12 +124,19 @@ class MarkManager {
   /// Processes the selection event for the element
   void registerSelectionEvent(
       StyledElement styledElement, TextSelection? selection, SelectionEvent event) {
-    _currentSelections.removeWhere((element) =>
-        element.styledElement == styledElement ||
-        element.styledElement.isAncestorOf(styledElement));
-    if (selection == null ||
-        event.type == SelectionEventType.clear ||
-        selection.start == selection.end) {
+    switch (event.type) {
+      case SelectionEventType.startEdgeUpdate:
+      case SelectionEventType.endEdgeUpdate:
+      case SelectionEventType.selectAll:
+      case SelectionEventType.selectWord:
+      case SelectionEventType.granularlyExtendSelection:
+      case SelectionEventType.directionallyExtendSelection:
+        break;
+      case SelectionEventType.clear:
+        _currentSelections.removeWhere((element) => element.styledElement == styledElement);
+    }
+    // Events like this should be ignore, flutter will randomly fire ones like these that are outside the actual selection.
+    if (selection == null || selection.start == selection.end) {
       return;
     }
     _currentSelections.add(Selection(styledElement, selection));
@@ -141,34 +152,64 @@ class MarkManager {
     //   print(x.styledElement.node.text!.substring(x.selection.start, x.selection.end));
     //   print("\n");
     // }
-    _currentSelections
-        .sortBy<num>((element) => element.styledElement.nodeToIndex[element.styledElement.node]!);
-    final startSelection = _currentSelections.first;
-    final endSelection = _currentSelections.last;
+    final nodeOrderMap = NodeOrderProcessing.createNodeToIndexMap(
+        _currentSelections.first.styledElement.root().node);
+    _currentSelections.sortBy<num>((s) => nodeOrderMap[s.styledElement.node]!);
+
+    final first = _currentSelections.first;
+    final selectionsInStartElement = _currentSelections.takeWhile((e) => e == first).toList();
+    selectionsInStartElement.sortBy<num>((s) => s.selection.start);
+    final startSelection = selectionsInStartElement.first;
+
+    final last = _currentSelections.last;
+    final selectionsInEndElement = _currentSelections.reversed.takeWhile((e) => e == last).toList();
+    selectionsInEndElement.sortBy<num>((s) => s.selection.end);
+    final endSelection = selectionsInEndElement.last;
 
     var result = _nextTextElementAndOffsetBasedOnView(
         startSelection.styledElement, startSelection.selection.start);
-    final (startTextElement, offfsetInStartTextElement) = result;
-    assert(offfsetInStartTextElement != startTextElement.text.length,
+    TextContentElement startTextElement;
+    int offsetInStartTextElement;
+    switch (result) {
+      case Ok(:final ok):
+        (startTextElement, offsetInStartTextElement) = ok;
+      case Err(:final err):
+        Log.e(err, append: "Some selection may have been corrupted. Resetting..");
+        _currentSelections.clear();
+        return null;
+    }
+    assert(offsetInStartTextElement != startTextElement.text.length,
         "The element should actually be the next element");
     result = _nextTextElementAndOffsetBasedOnView(
         endSelection.styledElement, endSelection.selection.end);
-    final (endTextElement, offsetInEndTextElement) = result;
+    TextContentElement endTextElement;
+    int offsetInEndTextElement;
+    switch (result) {
+      case Ok(:final ok):
+        (endTextElement, offsetInEndTextElement) = ok;
+      case Err(:final err):
+        Log.e(err, append: "Some selection may have been corrupted. Resetting..");
+        _currentSelections.clear();
+        return null;
+    }
     assert(offsetInEndTextElement != endTextElement.text.length,
         "The element should actually be the next element");
 
     int from = _characterCountUntilStyledElement(_root, startTextElement).last.$1 +
-        offfsetInStartTextElement;
+        offsetInStartTextElement;
     assert(from >= 0);
     int end =
         _characterCountUntilStyledElement(_root, endTextElement).last.$1 + offsetInEndTextElement;
     assert(end >= 0);
     assert(end - from >= 0);
-    final (markMarkerElement, _) = _createMarkElement(
-        startTextElement, offfsetInStartTextElement, Mark(start: from, end: end));
+    final (markMarkerElement, _) =
+        _createMarkElement(startTextElement, offsetInStartTextElement, Mark(start: from, end: end));
 
     addColorForRange(markMarkerElement);
 
+    for (final selection in _currentSelections) {
+      selection.styledElement.rebuildAssociatedWidget?.call();
+    }
     _currentSelections.clear();
 
     _currentMarkElements.add(markMarkerElement);
@@ -259,7 +300,7 @@ void _traverseAndAddStyleDownInclusive(
 /// Creates and places the [MarkElement] before the [placeBeforeElement] element.
 MarkElement _placeMarkBefore(TextContentElement placeBeforeElement, Mark mark,
     {bool willConnectInDom = true}) {
-  final markNode = dom.Element.tag("o-mark");
+  final markNode = dom.Element.tag(const MarkBuiltIn().supportedTags.first);
   //..attributes["id"] = mark.id;
   // ..attributes["range"] = "${mark.range}"
   // ..attributes["color"] = const ColorConverter().toJson(mark.color);
@@ -267,7 +308,6 @@ MarkElement _placeMarkBefore(TextContentElement placeBeforeElement, Mark mark,
     mark: mark,
     style: placeBeforeElement.style,
     node: markNode,
-    nodeToIndex: placeBeforeElement.nodeToIndex,
   );
   if (willConnectInDom) {
     placeBeforeElement.insertBefore(markMarkerElement);
@@ -279,12 +319,12 @@ MarkElement _placeMarkBefore(TextContentElement placeBeforeElement, Mark mark,
 
 /// Gets the next [TextContentElement] at the offset and returns with the start offset in the returning element.
 /// [viewOffset] is based on view logic, not backing data i.e. how the view determines offset.
-(TextContentElement, int) _nextTextElementAndOffsetBasedOnView(
+Result<(TextContentElement, int), Exception> _nextTextElementAndOffsetBasedOnView(
     StyledElement styledElement, int viewOffset) {
   assert(viewOffset >= 0);
   int currentOffsetInView = 0;
-  for (final element in elementTraversal.postOrderIterable(styledElement)) {
-    if(element is MarkElement){
+  for (final element in elementTraversal.preOrderIterable(styledElement)) {
+    if (element is MarkElement) {
       currentOffsetInView += 1;
       continue;
     }
@@ -297,9 +337,9 @@ MarkElement _placeMarkBefore(TextContentElement placeBeforeElement, Mark mark,
       continue;
     }
     final offsetInElement = viewOffset - currentOffsetInView;
-    return (element, offsetInElement);
+    return Ok((element, offsetInElement));
   }
-  unreachable("Expected a $TextContentElement to exist with the offset.");
+  return Err(Exception("Expected a $TextContentElement to exist with the offset."));
 }
 
 /// This and the above need to be kept in sync, will yield start and end.

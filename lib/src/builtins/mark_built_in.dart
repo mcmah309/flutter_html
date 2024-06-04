@@ -105,11 +105,7 @@ class MarkWidgetState extends State<MarkWidget> {
           // position outside the stack
           left: -widget.markerWidth / 2,
           child: SizedBox.shrink(
-            child: CustomTapDetector(
-                onTap: (duration, offset) {
-                  Log.w("taasgaed"); //todo
-                },
-                child: icon),
+            child: icon,
           ),
         ),
         CompositedTransformTarget(

@@ -15,6 +15,7 @@ class CssBoxWidgetWithInlineSpanChildren extends StatelessWidget {
       required this.children,
       required this.styledElement,
       required this.markManager,
+      required this.rebuild,
       this.textDirection,
       this.childIsReplaced = false,
       this.shrinkWrap = false,
@@ -34,9 +35,11 @@ class CssBoxWidgetWithInlineSpanChildren extends StatelessWidget {
 
   final MarkManager markManager;
 
+  final void Function() rebuild;
+
   @override
   Widget build(BuildContext context) {
-    final child = _generateWidgetChild(context, children, styledElement, markManager);
+    final child = _generateWidgetChild(context, children, styledElement, markManager, rebuild);
     return CssBoxWidget(
         styledElement: styledElement,
         markManager: markManager,
@@ -190,7 +193,7 @@ InlineSpan? _generateMarkerBoxSpan(StyledElement styledElement, MarkManager mark
 /// Takes a list of InlineSpan children and generates a Text.rich Widget
 /// containing those children.
 Widget _generateWidgetChild(BuildContext context, List<InlineSpan> children,
-    StyledElement styledElement, MarkManager markManager) {
+    StyledElement styledElement, MarkManager markManager, void Function() rebuild) {
   if (children.isEmpty) {
     return Container();
   }
@@ -211,7 +214,7 @@ Widget _generateWidgetChild(BuildContext context, List<InlineSpan> children,
       style: styledElement.style.generateTextStyle(),
       children: children,
     ),
-    rebuild: () => (context as Element).markNeedsBuild(),
+    rebuild: rebuild,
     maxLines: styledElement.style.maxLines,
     overflow: styledElement.style.textOverflow ?? TextOverflow.clip,
     textAlign: styledElement.style.textAlign ?? TextAlign.start,
