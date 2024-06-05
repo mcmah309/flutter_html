@@ -53,7 +53,7 @@ class MarkManager {
   //************************************************************************//
 
   /// Traverses the tree from this element, adding the color style to all [StyledElement]s in the range.
-  static void addColorForRange(MarkElement element) {
+  static void addStyleForRange(MarkElement element) {
     _traverseAndAddStyle(
         element, Style(backgroundColor: element.mark.color), Cell<int>(element.mark.range), 0);
   }
@@ -205,7 +205,7 @@ class MarkManager {
     final (markMarkerElement, _) =
         _createMarkElement(startTextElement, offsetInStartTextElement, Mark(start: from, end: end));
 
-    addColorForRange(markMarkerElement);
+    addStyleForRange(markMarkerElement);
 
     for (final selection in _currentSelections) {
       selection.styledElement.rebuildAssociatedWidget?.call();
@@ -255,11 +255,11 @@ void _traverseAndAddStyleDownInclusive(
       if (length > characterCount.get()) {
         final splitElement = element.split(characterCount.get());
         assert(splitElement.length == 2);
-        splitElement[0].style = splitElement[0].style.copyOnlyInherited(style);
+        splitElement[0].markStyle = style;
         characterCount.sub(characterCount.get());
         return;
       } else {
-        element.style = element.style.copyOnlyInherited(style);
+        element.markStyle = style;
         characterCount.sub(length);
       }
     }

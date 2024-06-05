@@ -19,12 +19,15 @@ abstract class ReplacedElement extends StyledElement {
     List<StyledElement>? children,
     required super.node,
     this.alignment = PlaceholderAlignment.aboveBaseline,
-  }) : super(parent: parent, children: children ?? []);
+    super.markStyle,
+    super.rebuildAssociatedWidget,
+  }) : super(
+          parent: parent,
+          children: children ?? [],
+        );
 
   static List<String?> parseMediaSources(List<dom.Element> elements) {
-    return elements
-        .where((element) => element.localName == 'source')
-        .map((element) {
+    return elements.where((element) => element.localName == 'source').map((element) {
       return element.attributes['src'];
     }).toList();
   }
@@ -37,11 +40,12 @@ class TextContentElement extends ReplacedElement {
   @override
   dom.Text get node => super.node as dom.Text;
 
-  TextContentElement({
-    required Style style,
-    required dom.Text node,
-    dom.Element? element,
-  }) : super(name: "[text]", style: style, node: node, elementId: "[[No ID]]");
+  TextContentElement(
+      {required Style style,
+      required dom.Text node,
+      super.markStyle,
+      super.rebuildAssociatedWidget})
+      : super(name: "[text]", style: style, node: node, elementId: "[[No ID]]");
 
   /// splits this [TextContentElement] at the indexes and makes any necessary changes to the
   /// tree. Returns the [TextContentElement]'s acted on.
@@ -52,7 +56,7 @@ class TextContentElement extends ReplacedElement {
       throw ArgumentError("Start of `$start' must be less than length of '$length'.");
     }
     end ??= text.length;
-    if(start >= end){
+    if (start >= end) {
       throw ArgumentError("Start of `$start' must be less than end of '$end'.");
     }
     final String text1;
@@ -61,8 +65,7 @@ class TextContentElement extends ReplacedElement {
     if (start == 0) {
       if (end == text.length) {
         return [this];
-      } 
-      else {
+      } else {
         text1 = node.text.substring(0, end);
         text2 = node.text.substring(end);
       }
@@ -77,8 +80,7 @@ class TextContentElement extends ReplacedElement {
       }
     }
     final dom.Text newNodeBefore = dom.Text(text1);
-    final TextContentElement newBeforeTextContentElement =
-        _copyWithNoParent(node: newNodeBefore);
+    final TextContentElement newBeforeTextContentElement = _copyWithNoParent(node: newNodeBefore);
     insertBefore(newBeforeTextContentElement);
     if (text3 == null) {
       node.text = text2;
@@ -104,9 +106,7 @@ class TextContentElement extends ReplacedElement {
       final stringBuffer = StringBuffer();
 
       var capitalizeNext = true;
-      for (final letter in text
-          .toLowerCase()
-          .codeUnits) {
+      for (final letter in text.toLowerCase().codeUnits) {
         // UTF-16: A-Z => 65-90, a-z => 97-122.
         if (capitalizeNext && letter >= 97 && letter <= 122) {
           stringBuffer.writeCharCode(letter - 32);
@@ -130,16 +130,19 @@ class TextContentElement extends ReplacedElement {
   TextContentElement _copyWithNoParent({
     Style? style,
     dom.Text? node,
-    dom.Element? element,
+    Style? markStyle,
+    void Function()? rebuildAssociatedWidget,
   }) {
     return TextContentElement(
         style: style ?? this.style.copyWith(),
-        node: node ?? this.node as dom.Text);
+        node: node ?? this.node,
+        markStyle: markStyle ?? this.markStyle,
+        rebuildAssociatedWidget: rebuildAssociatedWidget ?? this.rebuildAssociatedWidget);
   }
 
   @override
   String toString() {
-    return "\"${text!.replaceAll("\n", "\\n")}\"";
+    return "\"${text.replaceAll("\n", "\\n")}\"";
   }
 }
 
@@ -151,8 +154,7 @@ class LinebreakContentElement extends ReplacedElement {
 }
 
 class EmptyContentElement extends ReplacedElement {
-  EmptyContentElement(
-      {required super.node, String name = "empty"})
+  EmptyContentElement({required super.node, String name = "empty"})
       : super(name: name, style: Style(), elementId: "[[No ID]]");
 }
 

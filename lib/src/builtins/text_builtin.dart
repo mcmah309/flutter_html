@@ -24,7 +24,6 @@ class TextBuiltIn extends HtmlExtension {
     // }
     return TextContentElement(
       style: Style(),
-      element: context.node.parent,
       node: context.node as dom.Text,
     );
   }
@@ -36,8 +35,9 @@ class TextBuiltIn extends HtmlExtension {
     //   return const TextSpan();
     // }
     final element = context.styledElement! as TextContentElement;
+    final style = element.markStyle == null ? element.style : element.style.merge(element.markStyle!);
     return TextSpan(
-      style: element.style.generateTextStyle(),
+      style: style.generateTextStyle(),
       text: element.createTextForSpanWidget(),
     );
   }

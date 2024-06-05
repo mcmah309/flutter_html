@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_html/src/style.dart';
 import 'package:html/dom.dart' as dom;
 //TODO(Sub6Resources): don't use the internal code of the html package as it may change unexpectedly.
@@ -18,12 +19,14 @@ class StyledElement {
   StyledElement? parent;
   late final List<StyledElement> children;
   Style style;
+  /// The mark style to apply to the [style] if not null.
+  // Dev Note: this is seperated so this can be easily changed and undone.
+  Style? markStyle;
   final dom.Node node;
   final ListQueue<Counter> counters = ListQueue<Counter>();
-  /// A function that can rebuild the widget that is associated with the element.
+  /// A callback function that can rebuild the widget that is associated with the element. 
+  /// Only provided if this element has been built.
   void Function()? rebuildAssociatedWidget;
-
-  //int globalCharacterCount;
 
   StyledElement({
     this.name = "[[No name]]",
@@ -33,6 +36,8 @@ class StyledElement {
     List<StyledElement>? children,
     required this.style,
     required this.node,
+    this.markStyle,
+    this.rebuildAssociatedWidget,
   }) {
     this.elementClasses = elementClasses ?? [];
     this.children = children ?? [];

@@ -52,8 +52,7 @@ class ImageBuiltIn extends HtmlExtension {
   }
 
   @override
-  StyledElement prepare(
-      ExtensionContext context, List<StyledElement> children) {
+  StyledElement prepare(ExtensionContext context, List<StyledElement> children) {
     final parsedWidth = double.tryParse(context.attributes["width"] ?? "");
     final parsedHeight = double.tryParse(context.attributes["height"] ?? "");
 
@@ -105,8 +104,8 @@ class ImageBuiltIn extends HtmlExtension {
     );
   }
 
-  static RegExp get dataUriFormat => RegExp(
-      r"^(?<scheme>data):(?<mime>image/[\w+\-.]+);*(?<encoding>base64)?,\s*(?<data>.*)");
+  static RegExp get dataUriFormat =>
+      RegExp(r"^(?<scheme>data):(?<mime>image/[\w+\-.]+);*(?<encoding>base64)?,\s*(?<data>.*)");
 
   bool _matchesBase64Image(ExtensionContext context) {
     final attributes = context.attributes;
@@ -119,11 +118,9 @@ class ImageBuiltIn extends HtmlExtension {
 
     return context.elementName == "img" &&
         dataUri != null &&
-        (mimeTypes == null ||
-            mimeTypes!.contains(dataUri.namedGroup('mime'))) &&
+        (mimeTypes == null || mimeTypes!.contains(dataUri.namedGroup('mime'))) &&
         dataUri.namedGroup('mime') != 'image/svg+xml' &&
-        (dataEncoding == null ||
-            dataUri.namedGroup('encoding') == dataEncoding);
+        (dataEncoding == null || dataUri.namedGroup('encoding') == dataEncoding);
   }
 
   bool _matchesAssetImage(ExtensionContext context) {
@@ -133,8 +130,7 @@ class ImageBuiltIn extends HtmlExtension {
         attributes['src'] != null &&
         !attributes['src']!.endsWith(".svg") &&
         attributes['src']!.startsWith(assetSchema) &&
-        (fileExtensions == null ||
-            attributes['src']!.endsWithAnyFileExtension(fileExtensions!));
+        (fileExtensions == null || attributes['src']!.endsWithAnyFileExtension(fileExtensions!));
   }
 
   bool _matchesNetworkImage(ExtensionContext context) {
@@ -153,8 +149,7 @@ class ImageBuiltIn extends HtmlExtension {
         networkSchemas.contains(src.scheme) &&
         !src.path.endsWith(".svg") &&
         (networkDomains == null || networkDomains!.contains(src.host)) &&
-        (fileExtensions == null ||
-            src.path.endsWithAnyFileExtension(fileExtensions!));
+        (fileExtensions == null || src.path.endsWithAnyFileExtension(fileExtensions!));
   }
 
   Widget _base64ImageRender(ExtensionContext context, StyledElement element) {
@@ -175,8 +170,7 @@ class ImageBuiltIn extends HtmlExtension {
     );
   }
 
-  Widget _assetImageRender(
-      ExtensionContext context, StyledElement styledElement) {
+  Widget _assetImageRender(ExtensionContext context, StyledElement styledElement) {
     final element = context.styledElement as ImageElement;
     final assetPath = element.src.replaceFirst('asset:', '');
 

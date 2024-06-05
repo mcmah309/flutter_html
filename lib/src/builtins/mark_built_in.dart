@@ -24,7 +24,7 @@ class MarkBuiltIn extends HtmlExtension {
   /// stops in the middle of an element, split the stylized element
   @override
   void beforeProcessing(ExtensionContext context) {
-    MarkManager.addColorForRange(context.styledElement! as MarkElement);
+    MarkManager.addStyleForRange(context.styledElement! as MarkElement);
   }
 
   /// Adds a marker to the mark that a comment can be attached to
