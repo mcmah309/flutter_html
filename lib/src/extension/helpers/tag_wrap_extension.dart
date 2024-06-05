@@ -39,25 +39,12 @@ class TagWrapExtension extends HtmlExtension {
   bool matches(ExtensionContext context) {
     switch (context.currentStep) {
       case CurrentStep.preparing:
-        return super.matches(context);
       case CurrentStep.preStyling:
       case CurrentStep.preProcessing:
         return false;
       case CurrentStep.building:
-        return context.styledElement is WrapperElement;
+        return super.matches(context);
     }
-  }
-
-  @override
-  StyledElement prepare(ExtensionContext context, List<StyledElement> children) {
-    return WrapperElement(
-      parent: context.styledElement?.parent,
-      child: context.parser.prepareFromExtension(
-        context,
-        children,
-        extensionsToIgnore: {this},
-      ),
-    );
   }
 
   @override

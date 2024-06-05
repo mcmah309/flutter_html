@@ -20,6 +20,8 @@ class ExtensionContext {
 
   final ExtensionContext? parent;
 
+  final ParserConfig parserConfig;
+
   /// See [resetProcessing] for use.
   @internal
   bool willRebuildTree = false;
@@ -87,10 +89,6 @@ class ExtensionContext {
 
     return <String>{};
   }
-
-  /// A reference to the [HtmlParser] instance. Useful for calling callbacks
-  /// on the [Html] widget like [onLinkTap].
-  final HtmlParser parser;
 
   /// A reference to the [StyledElement] representation of this node.
   /// Guaranteed to be non-null only after the preparing step
@@ -173,19 +171,13 @@ class ExtensionContext {
     return _builtChildren?.values.toList();
   }
 
-  /// Guaranteed to be non-null only when `currentStep` is `building`,
-  /// but it might not necessarily be the nearest BuildContext. Probably should
-  /// use a `Builder` Widget if you need the most relevant BuildContext.
-  final BuildContext? buildContext;
-
   /// Constructs a new [ExtensionContext] object with the given information.
   ExtensionContext({
     required this.currentStep,
     required this.node,
-    required this.parser,
     required this.parent,
+    required this.parserConfig,
     this.styledElement,
-    this.buildContext,
     BuildChildrenCallback? buildChildrenCallback,
   }) : _callbackToBuildChildren = buildChildrenCallback;
 
@@ -210,4 +202,20 @@ enum CurrentStep {
   preStyling,
   preProcessing,
   building,
+}
+
+
+class ParserConfig {
+  bool shrinkWrap;
+  Key? parserKey;
+  Map<String, Style> globalStyles;
+  void Function(String? url, Map<String, String> attributes, html.Element? element) internalOnAnchorTap;
+
+  ParserConfig({
+    required this.shrinkWrap,
+    required this.parserKey,
+    required this.globalStyles,
+    required this.internalOnAnchorTap,
+  });
+
 }

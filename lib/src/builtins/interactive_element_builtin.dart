@@ -50,7 +50,7 @@ class InteractiveElementBuiltIn extends HtmlExtension {
     ExtensionContext context,
     InlineSpan childSpan,
   ) {
-    onTap() => context.parser.internalOnAnchorTap(
+    onTap() => context.parserConfig.internalOnAnchorTap(
           (context.styledElement! as InteractiveElement).href,
           context.attributes,
           (context.node as dom.Element),
@@ -71,9 +71,9 @@ class InteractiveElementBuiltIn extends HtmlExtension {
         child: MultipleTapGestureDetector(
           onTap: onTap,
           child: GestureDetector(
-            key: context.parser.key == null || context.styledElement == null
+            key: context.parserConfig.parserKey == null || context.styledElement == null
                 ? null
-                : AnchorKey.of(context.parser.key!, context.styledElement!),
+                : AnchorKey.of(context.parserConfig.parserKey!, context.styledElement!),
             onTap: onTap,
             child: (childSpan as WidgetSpan).child,
           ),

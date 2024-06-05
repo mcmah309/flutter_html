@@ -31,9 +31,9 @@ class DetailsElementBuiltIn extends HtmlExtension {
         InlineSpan? firstChild = children.isNotEmpty ? children.first : null;
         // details tag defaults to "Details" if no summary tag is present.
         return ExpansionTile(
-            key: context.parser.key == null || context.styledElement == null
+            key: context.parserConfig.parserKey == null || context.styledElement == null
                 ? null
-                : AnchorKey.of(context.parser.key!, context.styledElement!),
+                : AnchorKey.of(context.parserConfig.parserKey!, context.styledElement!),
             expandedAlignment: Alignment.centerLeft,
             title: childList.keys.isNotEmpty && childList.keys.first.name == "summary"
                 ? CssBoxWidgetWithInlineSpanChildren(

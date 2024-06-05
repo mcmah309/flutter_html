@@ -46,7 +46,7 @@ class RubyBuiltIn extends HtmlExtension {
       child: Builder(builder: (buildContext) {
         StyledElement? styledElement;
         List<Widget> widgets = <Widget>[];
-        final rubySize = context.parser.style['rt']?.fontSize?.value ??
+        final rubySize = context.parserConfig.globalStyles['rt']?.fontSize?.value ??
             max(9.0, context.styledElement!.style.fontSize!.value / 2);
         final rubyYPos = rubySize + rubySize / 2;
         List<StyledElement> children = [];
@@ -121,9 +121,9 @@ class RubyBuiltIn extends HtmlExtension {
         return Padding(
           padding: EdgeInsets.only(top: rubySize),
           child: Wrap(
-            key: context.parser.key == null || context.styledElement == null
+            key: context.parserConfig.parserKey == null || context.styledElement == null
                 ? null
-                : AnchorKey.of(context.parser.key!, context.styledElement!),
+                : AnchorKey.of(context.parserConfig.parserKey!, context.styledElement!),
             runSpacing: rubySize,
             children: widgets.map((e) {
               return Row(

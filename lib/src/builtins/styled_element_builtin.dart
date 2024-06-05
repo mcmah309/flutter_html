@@ -434,17 +434,17 @@ class StyledElementBuiltIn extends HtmlExtension {
                 (buildContext as Element).markNeedsBuild();
               }
             },
-            key: context.parser.key == null || context.styledElement == null
+            key: context.parserConfig.parserKey == null || context.styledElement == null
                 ? null
-                : AnchorKey.of(context.parser.key!, context.styledElement!),
+                : AnchorKey.of(context.parserConfig.parserKey!, context.styledElement!),
             styledElement: context.styledElement!,
-            shrinkWrap: context.parser.shrinkWrap,
+            shrinkWrap: context.parserConfig.shrinkWrap,
             childIsReplaced:
                 ["iframe", "img", "video", "audio"].contains(context.styledElement!.name),
             children: context.buildChildrenMapMemoized!.entries
                 .expandIndexed((i, child) => [
                       child.value,
-                      if (context.parser.shrinkWrap &&
+                      if (context.parserConfig.shrinkWrap &&
                           i != context.styledElement!.children.length - 1 &&
                           (child.key.style.display == Display.block ||
                               child.key.style.display == Display.listItem) &&
@@ -463,7 +463,7 @@ class StyledElementBuiltIn extends HtmlExtension {
       children: context.buildChildrenMapMemoized!.entries
           .expandIndexed((index, child) => [
                 child.value,
-                if (context.parser.shrinkWrap &&
+                if (context.parserConfig.shrinkWrap &&
                     child.key.style.display == Display.block &&
                     index != context.styledElement!.children.length - 1 &&
                     child.key.element?.parent?.localName != "th" &&
