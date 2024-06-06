@@ -52,32 +52,61 @@ class MarkManager {
 
   //************************************************************************//
 
-  /// Traverses the tree from this element, adding the color style to all [StyledElement]s in the range.
-  static void addStyleForRange(MarkElement element) {
-    _traverseAndAddStyle(
-        element, Style(backgroundColor: element.mark.color), Cell<int>(element.mark.range), 0);
+  /// Traverses the tree from this element, adding the mark style to all [StyledElement]s in the range and
+  /// returning the effected elements.
+  static List<StyledElement> addStyleForRange(MarkElement element) {
+    List<StyledElement> effectedElements = [];
+    final style = Style(backgroundColor: element.mark.color);
+    int characterCount = element.mark.range;
+    assert(characterCount > 0);
+    for (final element in elementTraversal.postOrderContinuationIterable(element)) {
+      assert(
+          (element.node is dom.Text && element is TextContentElement) ||
+              (element.node is! dom.Text && element is! TextContentElement),
+          "The only Text nodes and TextContentElements should only be paired together");
+      if (element is TextContentElement) {
+        String text = element.text;
+        int length = text.length;
+        if (length > characterCount) {
+          final splitElement = element.split(characterCount);
+          assert(splitElement.length == 2);
+          splitElement[0].markStyle = style;
+          characterCount -= characterCount;
+          effectedElements.add(splitElement[0]);
+          assert(characterCount == 0);
+          return effectedElements;
+        } else {
+          element.markStyle = style;
+          characterCount -= length;
+          effectedElements.add(element);
+        }
+      }
+    }
+    Log.e("Never reached the end of the marks range.");
+    return effectedElements;
   }
 
+  /// Traverses the tree from this element, removing the mark style from all the [StyledElement]s in the range and
+  /// returning the effected elements.
   static List<StyledElement> removeStyleForRange(MarkElement element) {
     List<StyledElement> effectedElements = [];
     int characterCount = element.mark.range;
+    assert(characterCount >= 0);
     for (final element in elementTraversal.postOrderContinuationIterable(element)) {
-      if (characterCount > 0) {
+      assert(
+          (element.node is dom.Text && element is TextContentElement) ||
+              (element.node is! dom.Text && element is! TextContentElement),
+          "The only Text nodes and TextContentElements should only be paired together");
+      if (element is TextContentElement) {
+        String text = element.text;
+        int length = text.length;
+        characterCount -= length;
         assert(
-            (element.node is dom.Text && element is TextContentElement) ||
-                (element.node is! dom.Text && element is! TextContentElement),
-            "The only Text nodes and TextContentElements should only be paired together");
-        if (element is TextContentElement) {
-          String text = element.text;
-          int length = text.length;
-          characterCount -= length;
-          assert(characterCount >= 0,
-              "The mark was not seperated by the exact range, so went too far.");
-          element.markStyle = null;
-          effectedElements.add(element);
-          if (characterCount == 0) {
-            return effectedElements;
-          }
+            characterCount >= 0, "The mark was not seperated by the exact range, so went too far.");
+        element.markStyle = null;
+        effectedElements.add(element);
+        if (characterCount == 0) {
+          return effectedElements;
         }
       }
     }
@@ -273,50 +302,6 @@ class MarkManager {
   @internal
   void setRoot(StyledElement root) {
     _root = root;
-  }
-}
-
-//************************************************************************//
-
-/// Traversing the html changing the style to the highlight and collecting the string being highlighted.
-void _traverseAndAddStyle(StyledElement element, Style style, Cell<int> characterCount, int skip) {
-  // add style to this element, if character count is smaller than length, break up and return, otherwise go down until no children, then, start going up
-  // good opportunity to publish tree node. then add that as a depends to here and changed styled element to inherit from
-  _traverseAndAddStyleDownInclusive(element, style, characterCount, skip);
-  if (characterCount.get() > 0 && element.parent != null) {
-    int parentShouldSkip = 1;
-    for (final parentChildElement in element.parent!.children) {
-      if (parentChildElement == element) break;
-      parentShouldSkip++;
-    }
-    _traverseAndAddStyle(element.parent!, style, characterCount, parentShouldSkip);
-  }
-}
-
-void _traverseAndAddStyleDownInclusive(
-    StyledElement element, Style style, Cell<int> characterCount, int skip) {
-  if (characterCount.get() > 0) {
-    assert(
-        (element.node is dom.Text && element is TextContentElement) ||
-            (element.node is! dom.Text && element is! TextContentElement),
-        "The only Text nodes and TextContentElements should only be paired together");
-    if (element is TextContentElement) {
-      String text = element.text;
-      int length = text.length;
-      if (length > characterCount.get()) {
-        final splitElement = element.split(characterCount.get());
-        assert(splitElement.length == 2);
-        splitElement[0].markStyle = style;
-        characterCount.sub(characterCount.get());
-        return;
-      } else {
-        element.markStyle = style;
-        characterCount.sub(length);
-      }
-    }
-  }
-  for (int i = skip; i < element.children.length && characterCount.get() > 0; ++i) {
-    _traverseAndAddStyleDownInclusive(element.children[i], style, characterCount, 0);
   }
 }
 
