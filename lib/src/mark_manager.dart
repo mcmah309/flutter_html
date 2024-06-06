@@ -58,6 +58,33 @@ class MarkManager {
         element, Style(backgroundColor: element.mark.color), Cell<int>(element.mark.range), 0);
   }
 
+  static List<StyledElement> removeStyleForRange(MarkElement element) {
+    List<StyledElement> effectedElements = [];
+    int characterCount = element.mark.range;
+    for (final element in elementTraversal.postOrderContinuationIterable(element)) {
+      if (characterCount > 0) {
+        assert(
+            (element.node is dom.Text && element is TextContentElement) ||
+                (element.node is! dom.Text && element is! TextContentElement),
+            "The only Text nodes and TextContentElements should only be paired together");
+        if (element is TextContentElement) {
+          String text = element.text;
+          int length = text.length;
+          characterCount -= length;
+          assert(characterCount >= 0,
+              "The mark was not seperated by the exact range, so went too far.");
+          element.markStyle = null;
+          effectedElements.add(element);
+          if (characterCount == 0) {
+            return effectedElements;
+          }
+        }
+      }
+    }
+    Log.e("Never reached the end of the marks range.");
+    return effectedElements;
+  }
+
   //************************************************************************//
 
   void registerMarkListener(void Function(MarkEvent event) callback) {
@@ -116,6 +143,30 @@ class MarkManager {
     }
     if (marksToAdd.isNotEmpty) {
       Log.e("Could not apply all marks, there are still ${marksToAdd.length} marks to apply.");
+    }
+  }
+
+  /// Removes the mark and triggers a rebuild for the effected section.
+  void removeMark(Mark mark) {
+    final int markToRemoveIndex =
+        _currentMarkElements.indexWhere((element) => element.mark == mark);
+    if (markToRemoveIndex < 0) {
+      Log.e("Could not find the mark to remove.");
+      return;
+    }
+    final MarkElement markToRemove = _currentMarkElements[markToRemoveIndex];
+    final effectedElements = removeStyleForRange(markToRemove);
+    markToRemove.disconnectFromParent();
+    effectedElements.add(markToRemove);
+    for (var element in effectedElements) {
+      void Function()? rebuildCallback = element.rebuildAssociatedWidget;
+      while (rebuildCallback == null && element.parent != null) {
+        element = element.parent!;
+        rebuildCallback = element.rebuildAssociatedWidget;
+      }
+      if (rebuildCallback != null) {
+        rebuildCallback();
+      }
     }
   }
 
