@@ -30,6 +30,21 @@ class Mark {
     this.color = color ?? MarkManager.defaultHighlightColor;
   }
 
+  bool overlaps(Mark mark){
+    return (start >= mark.start && start <= mark.end) || (end >= mark.start && end <= mark.end);
+  }
+
+  (int,int)? overlappingRange(Mark mark){
+    if (overlaps(mark)){
+      return (max(start, mark.start), min(end, mark.end));
+    }
+    return null;
+  }
+
+  bool isFullyInRange(int start, int end){
+    return this.start >= start && this.end <= end;
+  }
+
   @override
   String toString() {
     return "Mark: from: $start, to: $end, comment: $comment, color: $color";

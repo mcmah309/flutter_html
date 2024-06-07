@@ -42,7 +42,7 @@ class MarkManager {
 
   /// Selections this is aware of and can be turned into a [MarkElement] when
   /// [createMarkElementFromCurrentSelections] is called.
-  final List<Selection> _currentSelections = [];
+  final List<SelectionPart> _currentSelections = [];
 
   /// List of marks that have already been added to the tree. Needed for so can be removed when a new set of marks
   /// is received.
@@ -59,58 +59,86 @@ class MarkManager {
     final style = Style(backgroundColor: element.mark.color);
     int characterCount = element.mark.range;
     assert(characterCount > 0);
-    for (final element in elementTraversal.postOrderContinuationIterable(element)) {
+    for (final e in elementTraversal.postOrderContinuationIterable(element)) {
       assert(
-          (element.node is dom.Text && element is TextContentElement) ||
-              (element.node is! dom.Text && element is! TextContentElement),
+          (e.node is dom.Text && e is TextContentElement) ||
+              (e.node is! dom.Text && e is! TextContentElement),
           "The only Text nodes and TextContentElements should only be paired together");
-      if (element is TextContentElement) {
-        String text = element.text;
+      if (e is TextContentElement) {
+        String text = e.text;
         int length = text.length;
         if (length > characterCount) {
-          final splitElement = element.split(characterCount);
+          final splitElement = e.split(characterCount);
           assert(splitElement.length == 2);
           splitElement[0].markStyle = style;
           characterCount -= characterCount;
           effectedElements.add(splitElement[0]);
           assert(characterCount == 0);
-          return effectedElements;
         } else {
-          element.markStyle = style;
+          e.markStyle = style;
           characterCount -= length;
-          effectedElements.add(element);
+          effectedElements.add(e);
         }
-      }
-    }
-    Log.e("Never reached the end of the marks range.");
-    return effectedElements;
-  }
-
-  /// Traverses the tree from this element, removing the mark style from all the [StyledElement]s in the range and
-  /// returning the effected elements.
-  static List<StyledElement> removeStyleForRange(MarkElement element) {
-    List<StyledElement> effectedElements = [];
-    int characterCount = element.mark.range;
-    assert(characterCount >= 0);
-    for (final element in elementTraversal.postOrderContinuationIterable(element)) {
-      assert(
-          (element.node is dom.Text && element is TextContentElement) ||
-              (element.node is! dom.Text && element is! TextContentElement),
-          "The only Text nodes and TextContentElements should only be paired together");
-      if (element is TextContentElement) {
-        String text = element.text;
-        int length = text.length;
-        characterCount -= length;
-        assert(
-            characterCount >= 0, "The mark was not seperated by the exact range, so went too far.");
-        element.markStyle = null;
-        effectedElements.add(element);
         if (characterCount == 0) {
           return effectedElements;
         }
       }
     }
-    Log.e("Never reached the end of the marks range.");
+    if (characterCount != 0) {
+      Log.e("Never reached the end of the marks range.");
+    }
+    return effectedElements;
+  }
+
+  /// Traverses the tree from this element, removing the mark style from all the [StyledElement]s in the range
+  /// where another mark is not applied to that range, and
+  /// returns the effected elements.
+  List<StyledElement> removeStyleForRange(MarkElement element) {
+    List<StyledElement> effectedElements = [];
+    // List<(int, int)> rangesToIgnore = _currentMarkElements.fold([], (collection, next) {
+    //   final overlap = element.mark.overlappingRange(next.mark);
+    //   if (overlap != null) {
+    //     collection.add(overlap);
+    //   }
+    //   return collection;
+    // });
+    final currentMarkElementsWithoutElement = _currentMarkElements.toList()..remove(element);
+    assert(currentMarkElementsWithoutElement.length == _currentMarkElements.length - 1,
+        "Mark was not removed.");
+    List<(int, int)> currentMarkRanges = currentMarkElementsWithoutElement
+        .map((e) => (e.mark.start, e.mark.end))
+        .toList(growable: false);
+    List<(int, int)> rangesWithoutAnotherMark =
+        removeRangesFromRange(element.mark.start, element.mark.end, currentMarkRanges);
+    int characterCount = element.mark.range;
+    for (final e in elementTraversal.postOrderContinuationIterable(element)) {
+      assert(
+          (e.node is dom.Text && e is TextContentElement) ||
+              (e.node is! dom.Text && e is! TextContentElement),
+          "The only Text nodes and TextContentElements should only be paired together");
+      if (e is TextContentElement) {
+        String text = e.text;
+        int length = text.length;
+        final int start = element.mark.end - characterCount;
+        final int end = start + length;
+        characterCount -= length;
+        if (isFullyInRanges(start, end, rangesWithoutAnotherMark)) {
+          e.markStyle = null;
+          effectedElements.add(e);
+        } else {
+          assert(!isPartiallyInRanges(start, end, rangesWithoutAnotherMark),
+              "Ranges should never partially match. An earlier partition of an StyledElement was incorrect.");
+        }
+        if (characterCount == 0) {
+          return effectedElements;
+        }
+        assert(characterCount > 0,
+            "Slicing up StyledElements for marks did not cut the element off at the right point, went too far.");
+      }
+    }
+    if (characterCount != 0) {
+      Log.e("Never reached the end of the marks range.");
+    }
     return effectedElements;
   }
 
@@ -135,7 +163,6 @@ class MarkManager {
 
   /// Clears the old marks and adds the new marks as marks in the tree. You will need to trigger a rebuild
   /// later as this will not do that and does not apply highlighting styles. This just places the mark.
-  /// See [MarkBuiltin] for application.
   void setMarks(List<Mark> marks) {
     for (final alreadyAddedElement in _currentMarkElements) {
       alreadyAddedElement.disconnectFromParent();
@@ -175,7 +202,36 @@ class MarkManager {
     }
   }
 
-  /// Removes the mark and triggers a rebuild for the effected section.
+  /// Adds the mark and triggers a rebuild on the effected parts.
+  void addMark(Mark mark) {
+    int characterCount = 0;
+    TextContentElement? placementElement;
+    for (final element in elementTraversal.postOrderIterable(_root)) {
+      if (element is! TextContentElement) {
+        continue;
+      }
+      final length = element.text.length;
+      if (characterCount + length <= mark.start) {
+        characterCount += length;
+        continue;
+      }
+      placementElement = element;
+      break;
+    }
+    if (placementElement == null) {
+      Log.e("The mark is outside the tree. This should not be possible. Not adding mark.");
+      return;
+    }
+    final (markElement, nextTextContentElement) =
+        _createMarkElement(placementElement, mark.start - characterCount, mark);
+    final effectedElements = addStyleForRange(markElement);
+    effectedElements.add(markElement);
+    effectedElements.add(placementElement);
+    effectedElements.add(nextTextContentElement);
+    _triggerRebuildOnElements(effectedElements);
+  }
+
+  /// Removes the mark and triggers a rebuild for the effected parts.
   void removeMark(Mark mark) {
     final int markToRemoveIndex =
         _currentMarkElements.indexWhere((element) => element.mark == mark);
@@ -185,9 +241,13 @@ class MarkManager {
     }
     final MarkElement markToRemove = _currentMarkElements[markToRemoveIndex];
     final effectedElements = removeStyleForRange(markToRemove);
-    markToRemove.disconnectFromParent();
     effectedElements.add(markToRemove);
-    for (var element in effectedElements) {
+    _triggerRebuildOnElements(effectedElements);
+    markToRemove.disconnectFromParent();
+  }
+
+  void _triggerRebuildOnElements(List<StyledElement> elements) {
+    for (var element in elements) {
       void Function()? rebuildCallback = element.rebuildAssociatedWidget;
       while (rebuildCallback == null && element.parent != null) {
         element = element.parent!;
@@ -219,8 +279,22 @@ class MarkManager {
     if (selection == null || selection.start == selection.end) {
       return;
     }
-    _currentSelections.add(Selection(styledElement, selection));
+    _currentSelections.add(SelectionPart(styledElement, selection));
   }
+
+  // old
+  // void registerSelectionEvent(
+  //     StyledElement styledElement, TextSelection? selection, SelectionEvent event) {
+  //   _currentSelections.removeWhere((element) =>
+  //       element.styledElement == styledElement ||
+  //       element.styledElement.isAncestorOf(styledElement));
+  //   if (selection == null ||
+  //       event.type == SelectionEventType.clear ||
+  //       selection.start == selection.end) {
+  //     return;
+  //   }
+  //   _currentSelections.add(Selection(styledElement, selection));
+  // }
 
   /// Marks all current selections
   MarkElement? createMarkElementFromCurrentSelections() {
@@ -232,22 +306,9 @@ class MarkManager {
     //   print(x.styledElement.node.text!.substring(x.selection.start, x.selection.end));
     //   print("\n");
     // }
-    final nodeOrderMap = NodeOrderProcessing.createNodeToIndexMap(
-        _currentSelections.first.styledElement.root().node);
-    _currentSelections.sortBy<num>((s) => nodeOrderMap[s.styledElement.node]!);
-
-    final first = _currentSelections.first;
-    final selectionsInStartElement = _currentSelections.takeWhile((e) => e == first).toList();
-    selectionsInStartElement.sortBy<num>((s) => s.selection.start);
-    final startSelection = selectionsInStartElement.first;
-
-    final last = _currentSelections.last;
-    final selectionsInEndElement = _currentSelections.reversed.takeWhile((e) => e == last).toList();
-    selectionsInEndElement.sortBy<num>((s) => s.selection.end);
-    final endSelection = selectionsInEndElement.last;
-
-    var result = _nextTextElementAndOffsetBasedOnView(
-        startSelection.styledElement, startSelection.selection.start);
+    final selection = _calculateSelection();
+    var result =
+        _nextTextElementAndOffsetBasedOnView(selection.startStyledElement, selection.viewStart);
     TextContentElement startTextElement;
     int offsetInStartTextElement;
     switch (result) {
@@ -260,8 +321,7 @@ class MarkManager {
     }
     assert(offsetInStartTextElement != startTextElement.text.length,
         "The element should actually be the next element");
-    result = _nextTextElementAndOffsetBasedOnView(
-        endSelection.styledElement, endSelection.selection.end);
+    result = _nextTextElementAndOffsetBasedOnView(selection.endStyledElement, selection.viewEnd);
     TextContentElement endTextElement;
     int offsetInEndTextElement;
     switch (result) {
@@ -280,8 +340,8 @@ class MarkManager {
     assert(from >= 0);
     int end =
         _characterCountUntilStyledElement(_root, endTextElement).last.$1 + offsetInEndTextElement;
-    assert(end >= 0);
-    assert(end - from >= 0);
+    assert(end > 0);
+    assert(end - from > 0);
     final (markMarkerElement, _) =
         _createMarkElement(startTextElement, offsetInStartTextElement, Mark(start: from, end: end));
 
@@ -295,6 +355,24 @@ class MarkManager {
     _currentMarkElements.add(markMarkerElement);
 
     return markMarkerElement;
+  }
+
+  Selection _calculateSelection() {
+    final nodeOrderMap = NodeOrderProcessing.createNodeToIndexMap(
+        _currentSelections.first.styledElement.root().node);
+    _currentSelections.sortBy<num>((s) => nodeOrderMap[s.styledElement.node]!);
+
+    final first = _currentSelections.first;
+    final selectionsInStartElement = _currentSelections.takeWhile((e) => e == first).toList();
+    selectionsInStartElement.sortBy<num>((s) => s.selection.start);
+    final startSelection = selectionsInStartElement.first;
+
+    final last = _currentSelections.last;
+    final selectionsInEndElement = _currentSelections.reversed.takeWhile((e) => e == last).toList();
+    selectionsInEndElement.sortBy<num>((s) => s.selection.end);
+    final endSelection = selectionsInEndElement.last;
+    return Selection(startSelection.styledElement, startSelection.selection.start,
+        endSelection.styledElement, endSelection.selection.end);
   }
 
   //************************************************************************//
@@ -399,9 +477,91 @@ Iterable<(int, StyledElement)> _characterCountUntilStyledElement(StyledElement s
   }
 }
 
-class Selection {
+//************************************************************************//
+
+/// Returns the ranges between [start] and [end] where [rangesToRemove] have been removed.
+/// Ranges are [x,y)
+@internal
+List<(int, int)> removeRangesFromRange(int start, int end, List<(int, int)> rangesToRemove) {
+  assert(start >= 0);
+  assert(end >= 0);
+  assert(end >= start);
+  // sort by start
+  rangesToRemove.sort((a, b) => a.$1.compareTo(b.$1));
+
+  List<(int, int)> remainingRanges = [];
+
+  int currentStart = start;
+
+  for (var range in rangesToRemove) {
+    int rangeStart = range.$1;
+    int rangeEnd = range.$2;
+    assert(rangeStart >= 0);
+    assert(rangeEnd >= 0);
+    assert(rangeEnd > rangeStart);
+    if (rangeStart >= end) {
+      break;
+    }
+
+    if (rangeStart > currentStart) {
+      remainingRanges.add((currentStart, rangeStart));
+      currentStart = rangeEnd;
+      continue;
+    } else if (rangeEnd > currentStart) {
+      currentStart = rangeEnd;
+    }
+  }
+
+  if (currentStart < end) {
+    remainingRanges.add((currentStart, end));
+  }
+
+  return remainingRanges;
+}
+
+/// Returns true if start and end is fully inside a range in [ranges].
+@internal
+bool isFullyInRanges(int start, int end, List<(int, int)> ranges) {
+  for (var range in ranges) {
+    int rangeStart = range.$1;
+    int rangeEnd = range.$2;
+
+    if (start >= rangeStart && end <= rangeEnd) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/// Returns true if start and end is partially inside any range in [ranges].
+@internal
+bool isPartiallyInRanges(int start, int end, List<(int, int)> ranges) {
+  for (var range in ranges) {
+    int rangeStart = range.$1;
+    int rangeEnd = range.$2;
+
+    if (start < rangeEnd && end > rangeStart) {
+      return true;
+    }
+  }
+  return false;
+}
+
+//************************************************************************//
+
+class SelectionPart {
   StyledElement styledElement;
   TextSelection selection;
 
-  Selection(this.styledElement, this.selection);
+  SelectionPart(this.styledElement, this.selection);
+}
+
+class Selection {
+  StyledElement startStyledElement;
+  int viewStart;
+  StyledElement endStyledElement;
+  int viewEnd;
+
+  Selection(this.startStyledElement, this.viewStart, this.endStyledElement, this.viewEnd);
 }

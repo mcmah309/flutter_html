@@ -41,6 +41,7 @@ class HtmlParser {
   final Set<String> doNotRenderTheseTags;
   final Set<String> onlyRenderTheseTags;
   final MarkManager markManager;
+  final List<Mark> marks;
 
   HtmlParser({
     required this.parserKey,
@@ -55,6 +56,7 @@ class HtmlParser {
     this.doNotRenderTheseTags = const {},
     this.onlyRenderTheseTags = const {},
     required this.markManager,
+    this.marks = const [],
   });
 
   Widget parseWidget(dom.Element htmlData) {
@@ -72,12 +74,12 @@ class HtmlParser {
         globalStyles: globalStyles,
         internalOnAnchorTap: internalOnTap);
 
-    reConfigFunc(StyledElement root) =>
-        _configureTree(root, extensions, globalStyles, externalCss, parserConfig,
-            postPrepareTree: postPrepareTree,
-            postStyleTree: postStyleTree,
-            doNotRenderTheseTags: doNotRenderTheseTags,
-            onlyRenderTheseTags: onlyRenderTheseTags);
+    reConfigFunc(StyledElement root) => _configureTree(
+        root, extensions, globalStyles, externalCss, parserConfig, markManager, marks,
+        postPrepareTree: postPrepareTree,
+        postStyleTree: postStyleTree,
+        doNotRenderTheseTags: doNotRenderTheseTags,
+        onlyRenderTheseTags: onlyRenderTheseTags);
     reConfigFunc(root);
     final treeBuilt = _buildTree(root, extensions, markManager, reConfigFunc, parserConfig,
         doNotRenderTheseTags: doNotRenderTheseTags, onlyRenderTheseTags: onlyRenderTheseTags);
@@ -174,7 +176,7 @@ class _HtmlParseWidgetResultWrapperState extends State<_HtmlParseWidgetResultWra
 }
 
 void _configureTree(StyledElement tree, List<HtmlExtension> extensions, Map<String, Style> style,
-    String externalCss, ParserConfig parserConfig,
+    String externalCss, ParserConfig parserConfig, MarkManager markManager, List<Mark> marks,
     {String? Function(String, List<Message>)? onCssParseError,
     void Function(StyledElement tree)? postPrepareTree,
     void Function(StyledElement tree)? postStyleTree,
@@ -183,6 +185,7 @@ void _configureTree(StyledElement tree, List<HtmlExtension> extensions, Map<Stri
   // Preparing Step
   _prepareHtmlTree(tree, extensions, parserConfig,
       doNotRenderTheseTags: doNotRenderTheseTags, onlyRenderTheseTags: onlyRenderTheseTags);
+  markManager.setMarks(marks);
   postPrepareTree?.call(tree);
 
   // Styling Step
