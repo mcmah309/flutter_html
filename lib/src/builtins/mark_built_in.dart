@@ -82,9 +82,6 @@ class MarkWidgetState extends State<MarkWidget> {
   final OverlayPortalController _controller = OverlayPortalController();
   final LayerLink layerLink = LayerLink();
 
-  GlobalKey mark = GlobalKey();
-  GlobalKey mark2 = GlobalKey();
-
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.endOfFrame.then((_) {
@@ -107,6 +104,7 @@ class MarkWidgetState extends State<MarkWidget> {
           // position outside the stack
           left: -widget.markerWidth / 2,
           child: SizedBox.shrink(
+            key: MarkGlobalKey(widget.markElement.mark),
             child: icon,
           ),
         ),
@@ -142,4 +140,21 @@ class MarkWidgetState extends State<MarkWidget> {
       ],
     );
   }
+}
+
+class MarkGlobalKey<T extends State<StatefulWidget>> extends GlobalKey<T> {
+  const MarkGlobalKey(this.mark) : super.constructor();
+
+  final Mark mark;
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is MarkGlobalKey<T> && mark == other.mark;
+  }
+
+  @override
+  int get hashCode => mark.hashCode;
 }

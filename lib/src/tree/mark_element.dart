@@ -30,18 +30,18 @@ class Mark {
     this.color = color ?? MarkManager.defaultHighlightColor;
   }
 
-  bool overlaps(Mark mark){
+  bool overlaps(Mark mark) {
     return (start >= mark.start && start <= mark.end) || (end >= mark.start && end <= mark.end);
   }
 
-  (int,int)? overlappingRange(Mark mark){
-    if (overlaps(mark)){
+  (int, int)? overlappingRange(Mark mark) {
+    if (overlaps(mark)) {
       return (max(start, mark.start), min(end, mark.end));
     }
     return null;
   }
 
-  bool isFullyInRange(int start, int end){
+  bool isFullyInRange(int start, int end) {
     return this.start >= start && this.end <= end;
   }
 
@@ -52,20 +52,14 @@ class Mark {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other is Mark) {
-      return start == other.start &&
-          end == other.end &&
-          comment == other.comment &&
-          color == other.color;
-    }
-    return false;
+    return other is Mark && start == other.start && end == other.end;
+    //comment == other.comment &&
+    //color == other.color;
   }
 
   @override
-  int get hashCode => start.hashCode ^ end.hashCode ^ comment.hashCode ^ color.hashCode;
+  int get hashCode => start.hashCode ^ end.hashCode;
+  //^ comment.hashCode ^ color.hashCode;
 }
 
 // String _generateUniqueHtmlId() {
