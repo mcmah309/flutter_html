@@ -39,8 +39,8 @@ class MarkBuiltIn extends HtmlExtension {
     double markerHeight = markerWidth;
     return WidgetSpan(
         child: MarkWidget(
-          markManager: markManager,
-          markElement: context.styledElement as MarkElement,
+      markManager: markManager,
+      markElement: context.styledElement as MarkElement,
       markerHeight: markerHeight,
       markerWidth: markerWidth,
       lineHeight: markerHeight,
@@ -97,6 +97,8 @@ class MarkWidgetState extends State<MarkWidget> {
           Shadow(
               color: Colors.black, blurRadius: widget.markerWidth / 5, offset: const Offset(1, 1))
         ]);
+    final gestureWidth = widget.markerWidth * 1.3;
+    final gestureHieght = gestureWidth;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -115,19 +117,22 @@ class MarkWidgetState extends State<MarkWidget> {
               controller: _controller,
               overlayChildBuilder: (BuildContext context) {
                 return Positioned(
-                  width: widget.markerWidth,
+                  width: gestureWidth,
+                  height: gestureHieght,
                   child: CompositedTransformFollower(
-                    offset: Offset(
-                        -widget.markerWidth / 2, -widget.lineHeight - widget.markerHeight / 2),
+                    offset: Offset(-(gestureWidth) / 2, -widget.lineHeight - gestureHieght / 2),
                     link: layerLink,
-                    child: GestureDetector(
+                    // ignore: sized_box_for_whitespace
+                    child: Container(
+                      width: gestureWidth,
+                      height: gestureHieght,
+                      //color: Colors.red,
+                      child: GestureDetector(
                         onTap: () {
                           widget.markManager.markTapped(widget.markElement);
                         },
-                        child: Opacity(
-                          opacity: 0,
-                          child: icon,
-                        )),
+                      ),
+                    ),
                   ),
                 );
               },
