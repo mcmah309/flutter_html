@@ -22,7 +22,6 @@ abstract class ReplacedElement extends StyledElement {
     super.markStyle,
     super.rebuildAssociatedWidget,
   }) : super(
-          parent: parent,
           children: children ?? [],
         );
 

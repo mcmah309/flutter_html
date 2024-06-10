@@ -48,6 +48,8 @@ class MarkManager {
   /// is received.
   final List<MarkElement> _currentMarkElements = [];
 
+  List<MarkElement> get currentMarkElements => _currentMarkElements.toList();
+
   final List<void Function(MarkEvent event)> _listeners = [];
 
   //************************************************************************//
@@ -102,9 +104,9 @@ class MarkManager {
     //   }
     //   return collection;
     // });
-    final currentMarkElementsWithoutElement = _currentMarkElements.toList()..remove(element);
-    assert(currentMarkElementsWithoutElement.length == _currentMarkElements.length - 1,
-        "Mark was not removed.");
+    final currentMarkElementsWithoutElement = _currentMarkElements.toList();
+    final hasRemoved = currentMarkElementsWithoutElement.remove(element);
+    assert(hasRemoved, "Mark was not removed.");
     List<(int, int)> currentMarkRanges = currentMarkElementsWithoutElement
         .map((e) => (e.mark.start, e.mark.end))
         .toList(growable: false);
@@ -164,10 +166,7 @@ class MarkManager {
   /// Clears the old marks and adds the new marks as marks in the tree. You will need to trigger a rebuild
   /// later as this will not do that and does not apply highlighting styles. This just places the mark.
   void setMarks(List<Mark> marks) {
-    for (final alreadyAddedElement in _currentMarkElements) {
-      alreadyAddedElement.disconnectFromParent();
-    }
-    _currentMarkElements.clear();
+    clearMarks();
     if (marks.isEmpty) {
       return;
     }
@@ -206,6 +205,8 @@ class MarkManager {
   void addMark(Mark mark) {
     int characterCount = 0;
     TextContentElement? placementElement;
+    assert(!_currentMarkElements.map((e) => e.mark).contains(mark),
+        "Mark already exists and is attempted to be added again.");
     for (final element in elementTraversal.postOrderIterable(_root)) {
       if (element is! TextContentElement) {
         continue;
@@ -229,6 +230,16 @@ class MarkManager {
     effectedElements.add(placementElement);
     effectedElements.add(nextTextContentElement);
     _triggerRebuildOnElements(effectedElements);
+    
+    _currentMarkElements.add(markElement);
+  }
+
+  void clearMarks() {
+    _triggerRebuildOnElements(_currentMarkElements);
+    for (final alreadyAddedElement in _currentMarkElements) {
+      alreadyAddedElement.disconnectFromParent();
+    }
+    _currentMarkElements.clear();
   }
 
   /// Removes the mark and triggers a rebuild for the effected parts.
@@ -269,7 +280,7 @@ class MarkManager {
       return;
     }
     selections.removeWhere((element) => element.start == element.end);
-    if(selections.isEmpty){
+    if (selections.isEmpty) {
       _currentSelections.remove(styledElement);
       return;
     }
@@ -336,14 +347,12 @@ class MarkManager {
         _characterCountUntilStyledElement(_root, endTextElement).last.$1 + offsetInEndTextElement;
     assert(end > 0);
     assert(end - from > 0);
-    final (markMarkerElement, _) = _createMarkElement(startTextElement, offsetInStartTextElement,
+    final (markMarkerElement, nextTextElement) = _createMarkElement(startTextElement, offsetInStartTextElement,
         Mark(id: generateUniqueHtmlCompatibleId(), start: from, end: end));
 
     addStyleForRange(markMarkerElement);
 
-    for (final styledElement in _currentSelections.keys) {
-      styledElement.rebuildAssociatedWidget?.call();
-    }
+    _triggerRebuildOnElements([..._currentSelections.keys, markMarkerElement, nextTextElement]);
     _currentSelections.clear();
 
     _currentMarkElements.add(markMarkerElement);

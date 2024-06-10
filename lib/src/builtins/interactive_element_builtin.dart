@@ -25,7 +25,6 @@ class InteractiveElementBuiltIn extends HtmlExtension {
       ExtensionContext context, List<StyledElement> children) {
     return InteractiveElement(
       name: context.elementName,
-      parent: context.styledElement?.parent,
       children: children,
       href: context.attributes['href'],
       style: Style(

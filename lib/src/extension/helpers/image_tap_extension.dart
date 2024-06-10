@@ -85,7 +85,6 @@ class OnImageTapExtension extends ImageBuiltIn {
 
 class ImageTapExtensionElement extends StyledElement {
   ImageTapExtensionElement({
-    super.parent,
     super.children,
     super.elementClasses,
     super.elementId,

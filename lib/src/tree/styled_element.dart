@@ -16,15 +16,18 @@ class StyledElement {
   final String name;
   final String elementId;
   late final List<String> elementClasses;
+  /// The parent of this element. Set when this is assigned as a child of another element.
   StyledElement? parent;
   late final List<StyledElement> children;
   Style style;
+
   /// The mark style to apply to the [style] if not null.
   // Dev Note: this is seperated so this can be easily changed and undone.
   Style? markStyle;
   final dom.Node node;
   final ListQueue<Counter> counters = ListQueue<Counter>();
-  /// A callback function that can rebuild the widget that is associated with the element. 
+
+  /// A callback function that can rebuild the widget that is associated with the element.
   /// Only provided if this element has been built.
   void Function()? rebuildAssociatedWidget;
 
@@ -32,7 +35,6 @@ class StyledElement {
     this.name = "[[No name]]",
     this.elementId = "[[No ID]]",
     List<String>? elementClasses,
-    this.parent,
     List<StyledElement>? children,
     required this.style,
     required this.node,
@@ -42,6 +44,7 @@ class StyledElement {
     this.elementClasses = elementClasses ?? [];
     this.children = children ?? [];
     for (final e in this.children) {
+      assert(e.parent == null);
       e.parent = this;
     }
   }
@@ -119,10 +122,16 @@ class StyledElement {
 
   /// Disconnects this from the parent tree.
   void disconnectFromParent() {
-    parent?.children.remove(this);
-    node.parent?.nodes.remove(node);
-    parent = null;
-    node.parentNode = null;
+    if (parent != null) {
+      var hasRemoved = parent!.children.remove(this);
+      assert(hasRemoved);
+      hasRemoved = node.parent!.nodes.remove(node);
+      assert(hasRemoved);
+      parent = null;
+      node.parentNode = null;
+    } else {
+      assert(node.parent == null);
+    }
   }
 
   bool isAncestorOf(StyledElement element) {

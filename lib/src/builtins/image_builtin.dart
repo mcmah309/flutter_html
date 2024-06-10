@@ -60,7 +60,6 @@ class ImageBuiltIn extends HtmlExtension {
     Height? height = parsedHeight != null ? Height(parsedHeight) : null;
     return ImageElement(
       name: context.elementName,
-      parent: context.styledElement?.parent,
       children: children,
       style: Style(width: width, height: height),
       node: context.node,

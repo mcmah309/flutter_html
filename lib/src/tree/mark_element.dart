@@ -12,7 +12,6 @@ class MarkElement extends StyledElement {
     required this.mark,
     // Style is needed to know the know the font size to make the marker. Usually the style for the proceeding element is used.
     required super.style,
-    super.parent,
     required super.node,
   });
 }
