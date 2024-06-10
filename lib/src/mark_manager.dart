@@ -230,7 +230,7 @@ class MarkManager {
     effectedElements.add(placementElement);
     effectedElements.add(nextTextContentElement);
     _triggerRebuildOnElements(effectedElements);
-    
+
     _currentMarkElements.add(markElement);
   }
 
@@ -279,7 +279,13 @@ class MarkManager {
       _currentSelections.remove(styledElement);
       return;
     }
-    selections.removeWhere((element) => element.start == element.end);
+    selections.removeWhere((element) =>
+        !element.isValid ||
+        element.isCollapsed ||
+        !element.isNormalized ||
+        // Dev Note: For some reason random selections that never get highlighted are sent where this is true. Could not figure out why,
+        // so banning highlights of one length elements in general to prevent this.
+        element.start + 1 == element.end);
     if (selections.isEmpty) {
       _currentSelections.remove(styledElement);
       return;
@@ -347,7 +353,9 @@ class MarkManager {
         _characterCountUntilStyledElement(_root, endTextElement).last.$1 + offsetInEndTextElement;
     assert(end > 0);
     assert(end - from > 0);
-    final (markMarkerElement, nextTextElement) = _createMarkElement(startTextElement, offsetInStartTextElement,
+    final (markMarkerElement, nextTextElement) = _createMarkElement(
+        startTextElement,
+        offsetInStartTextElement,
         Mark(id: generateUniqueHtmlCompatibleId(), start: from, end: end));
 
     addStyleForRange(markMarkerElement);
