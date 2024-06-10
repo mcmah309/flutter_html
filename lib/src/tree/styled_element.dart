@@ -49,32 +49,38 @@ class StyledElement {
   /// Note: I believe this checks if a css selector applies to this node. Usually used to then apply the selector properties
   /// to the node
   bool matchesSelector(String selector) {
-    if(name == selector){
+    if (name == selector) {
       return true;
     }
-    if(element == null){
+    if (element == null) {
       return false;
     }
-    final isMatch = executeProtected(() => matches(element!, selector)).isOkAnd((p0) => p0); // issue https://github.com/Sub6Resources/flutter_html/issues/1298
+    final isMatch = executeProtected(() => matches(element!, selector))
+        .isOkAnd((p0) => p0); // issue https://github.com/Sub6Resources/flutter_html/issues/1298
     return isMatch;
   }
 
-  static final Expando<bool> _memoize = Expando();
+  // static void resetSelectorMatchMemoization(){
+  //   _memoizeSelectorMatch = Expando();
+  // }
+
+  static Expando<bool> _memoizeSelectorMatch = Expando();
 
   /// Note: Given [matches] speed an the number of times this is called, [matchesSelector] is an extreme performance bottleneck.
   /// memoizing gives an observed 10x speedup. The drawback is that if something about the node changes, this will not be picked up.
   bool matchesSelectorMemoized(String selector) {
-    if(element == null){
+    if (element == null) {
       return false;
     }
-    if(name == selector){
+    if (name == selector) {
       return true;
     }
     final input = MemoizedMatchInput(element!, selector);
-    var isMatch = _memoize[input];
-    while(isMatch == null){
-      isMatch = executeProtected(() => matches(element!, selector)).isOkAnd((p0) => p0); // issue https://github.com/Sub6Resources/flutter_html/issues/1298
-      _memoize[input] = isMatch;
+    var isMatch = _memoizeSelectorMatch[input];
+    while (isMatch == null) {
+      isMatch = executeProtected(() => matches(element!, selector))
+          .isOkAnd((p0) => p0); // issue https://github.com/Sub6Resources/flutter_html/issues/1298
+      _memoizeSelectorMatch[input] = isMatch;
     }
     return isMatch;
   }
@@ -119,10 +125,10 @@ class StyledElement {
     node.parentNode = null;
   }
 
-  bool isAncestorOf(StyledElement element){
+  bool isAncestorOf(StyledElement element) {
     StyledElement? parent = element.parent;
-    while(parent != null){
-      if(parent == this){
+    while (parent != null) {
+      if (parent == this) {
         return true;
       }
       parent = parent.parent;
@@ -132,7 +138,7 @@ class StyledElement {
 
   StyledElement root() {
     StyledElement element = this;
-    while(element.parent != null){
+    while (element.parent != null) {
       element = element.parent!;
     }
     return element;
@@ -143,8 +149,7 @@ class StyledElement {
     String selfData =
         "[$name] ${children.length} ${elementClasses.isNotEmpty == true ? 'C:${elementClasses.toString()}' : ''}${elementId.isNotEmpty == true ? 'ID: $elementId' : ''}";
     for (var child in children) {
-      selfData += ("\n${child.toString()}")
-          .replaceAll(RegExp("^", multiLine: true), "-");
+      selfData += ("\n${child.toString()}").replaceAll(RegExp("^", multiLine: true), "-");
     }
     return selfData;
   }
@@ -203,13 +208,10 @@ class MemoizedMatchInput {
 
   MemoizedMatchInput(this.node, this.text);
 
-    @override
+  @override
   bool operator ==(Object other) =>
-      other is MemoizedMatchInput &&
-          node == other.node
-          && text == other.text;
+      other is MemoizedMatchInput && node == other.node && text == other.text;
 
   @override
   int get hashCode => node.hashCode ^ text.hashCode;
-
 }

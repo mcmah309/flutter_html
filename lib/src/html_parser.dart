@@ -66,6 +66,7 @@ class HtmlParser {
     // time is spent on the building the widget tree in the `build` methods and there is nothing that can be done about that.
     StyledElement root = StyledElement(
         name: '[Tree Root]', children: [], node: htmlData, style: globalStyles["html"] ?? Style());
+    // StyledElement.resetSelectorMatchMemoization();
     markManager.setRoot(root);
     String externalCss = htmlData.getElementsByTagName("style").map((e) => e.innerHtml).join();
     final parserConfig = ParserConfig(

@@ -49,8 +49,8 @@ class StyledElementWidget extends StatelessWidget {
     styledElement.rebuildAssociatedWidget = rebuild;
     return Text.rich(
       textSpan,
-      onSelectionEvent: (selection, event) =>
-          markManager.registerSelectionEvent(styledElement, selection, event),
+      onSelectionUpdate: (selections) =>
+          markManager.registerSelectionUpdate(styledElement, selections),
       key: key,
       style: style,
       strutStyle: strutStyle,

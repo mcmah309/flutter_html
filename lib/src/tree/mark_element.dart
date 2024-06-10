@@ -19,13 +19,14 @@ class MarkElement extends StyledElement {
 
 /// A mark range.
 class Mark {
+  String id;
   int start;
   int end;
   int get range => end - start;
   String? comment;
   late Color color;
 
-  Mark({required this.start, required this.end, this.comment, Color? color})
+  Mark({required this.id, required this.start, required this.end, this.comment, Color? color})
       : assert(end - start >= 0 && start >= 0 && end >= 0) {
     this.color = color ?? MarkManager.defaultHighlightColor;
   }
@@ -47,23 +48,23 @@ class Mark {
 
   @override
   String toString() {
-    return "Mark: from: $start, to: $end, comment: $comment, color: $color";
+    return "Mark: id: $id, from: $start, to: $end, comment: $comment, color: $color";
   }
 
   @override
   bool operator ==(Object other) {
-    return other is Mark && start == other.start && end == other.end;
+    return other is Mark && id == other.id;
     //comment == other.comment &&
     //color == other.color;
   }
 
   @override
-  int get hashCode => start.hashCode ^ end.hashCode;
+  int get hashCode => id.hashCode;
   //^ comment.hashCode ^ color.hashCode;
 }
 
-// String _generateUniqueHtmlId() {
-//   final randomGen = Random(DateTime.now().microsecondsSinceEpoch);
-//   const validChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-//   return List.generate(15, (index) => validChars[randomGen.nextInt(validChars.length)]).join();
-// }
+String generateUniqueHtmlCompatibleId() {
+  final randomGen = Random(DateTime.now().microsecondsSinceEpoch);
+  const validChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  return List.generate(15, (index) => validChars[randomGen.nextInt(validChars.length)]).join();
+}

@@ -115,7 +115,7 @@ class RichText extends MultiChildRenderObjectWidget {
     this.textHeightBehavior,
     this.selectionRegistrar,
     this.selectionColor,
-    this.onSelectionEvent,
+    this.onSelectionUpdate,
   }) : assert(maxLines == null || maxLines > 0),
        assert(selectionRegistrar == null || selectionColor != null),
        assert(textScaleFactor == 1.0 || identical(textScaler, TextScaler.noScaling), 'Use textScaler instead.'),
@@ -217,8 +217,8 @@ class RichText extends MultiChildRenderObjectWidget {
   /// widgets.
   final Color? selectionColor;
 
-  /// {@macro flutter.rendering.RenderParagraph.onSelectionEvent}
-  final SelectionEventCallback? onSelectionEvent;
+  /// {@macro flutter.rendering.RenderParagraph.onSelectionUpdate}
+  final SelectionUpdateCallback? onSelectionUpdate;
 
   @override
   RenderParagraph createRenderObject(BuildContext context) {
@@ -236,7 +236,7 @@ class RichText extends MultiChildRenderObjectWidget {
       locale: locale ?? Localizations.maybeLocaleOf(context),
       registrar: selectionRegistrar,
       selectionColor: selectionColor,
-      onSelectionEvent: onSelectionEvent,
+      onSelectionUpdate: onSelectionUpdate,
     );
   }
 
@@ -257,7 +257,7 @@ class RichText extends MultiChildRenderObjectWidget {
       ..locale = locale ?? Localizations.maybeLocaleOf(context)
       ..registrar = selectionRegistrar
       ..selectionColor = selectionColor
-      ..onSelectionEvent = onSelectionEvent;
+      ..onSelectionUpdate = onSelectionUpdate;
   }
 
   @override

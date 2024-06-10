@@ -42,7 +42,7 @@ class MarkManager {
 
   /// Selections this is aware of and can be turned into a [MarkElement] when
   /// [createMarkElementFromCurrentSelections] is called.
-  final List<SelectionPart> _currentSelections = [];
+  final Map<StyledElement, List<TextSelection>> _currentSelections = {};
 
   /// List of marks that have already been added to the tree. Needed for so can be removed when a new set of marks
   /// is received.
@@ -236,7 +236,7 @@ class MarkManager {
     final int markToRemoveIndex =
         _currentMarkElements.indexWhere((element) => element.mark == mark);
     if (markToRemoveIndex < 0) {
-      Log.e("Could not find the mark to remove.");
+      Log.e("Could not find the mark to remove:\n$mark");
       return;
     }
     final MarkElement markToRemove = _currentMarkElements[markToRemoveIndex];
@@ -244,6 +244,7 @@ class MarkManager {
     effectedElements.add(markToRemove);
     _triggerRebuildOnElements(effectedElements);
     markToRemove.disconnectFromParent();
+    _currentMarkElements.removeAt(markToRemoveIndex);
   }
 
   void _triggerRebuildOnElements(List<StyledElement> elements) {
@@ -262,24 +263,17 @@ class MarkManager {
   //************************************************************************//
 
   /// Processes the selection event for the element
-  void registerSelectionEvent(
-      StyledElement styledElement, TextSelection? selection, SelectionEvent event) {
-    switch (event.type) {
-      case SelectionEventType.startEdgeUpdate:
-      case SelectionEventType.endEdgeUpdate:
-      case SelectionEventType.selectAll:
-      case SelectionEventType.selectWord:
-      case SelectionEventType.granularlyExtendSelection:
-      case SelectionEventType.directionallyExtendSelection:
-        break;
-      case SelectionEventType.clear:
-        _currentSelections.removeWhere((element) => element.styledElement == styledElement);
-    }
-    // Events like this should be ignore, flutter will randomly fire ones like these that are outside the actual selection.
-    if (selection == null || selection.start == selection.end) {
+  void registerSelectionUpdate(StyledElement styledElement, List<TextSelection>? selections) {
+    if (selections == null || selections.isEmpty) {
+      _currentSelections.remove(styledElement);
       return;
     }
-    _currentSelections.add(SelectionPart(styledElement, selection));
+    selections.removeWhere((element) => element.start == element.end);
+    if(selections.isEmpty){
+      _currentSelections.remove(styledElement);
+      return;
+    }
+    _currentSelections[styledElement] = selections;
   }
 
   // old
@@ -293,7 +287,7 @@ class MarkManager {
   //       selection.start == selection.end) {
   //     return;
   //   }
-  //   _currentSelections.add(Selection(styledElement, selection));
+  //   _currentSelections.add(SelectionPart(styledElement, selection));
   // }
 
   /// Marks all current selections
@@ -342,13 +336,13 @@ class MarkManager {
         _characterCountUntilStyledElement(_root, endTextElement).last.$1 + offsetInEndTextElement;
     assert(end > 0);
     assert(end - from > 0);
-    final (markMarkerElement, _) =
-        _createMarkElement(startTextElement, offsetInStartTextElement, Mark(start: from, end: end));
+    final (markMarkerElement, _) = _createMarkElement(startTextElement, offsetInStartTextElement,
+        Mark(id: generateUniqueHtmlCompatibleId(), start: from, end: end));
 
     addStyleForRange(markMarkerElement);
 
-    for (final selection in _currentSelections) {
-      selection.styledElement.rebuildAssociatedWidget?.call();
+    for (final styledElement in _currentSelections.keys) {
+      styledElement.rebuildAssociatedWidget?.call();
     }
     _currentSelections.clear();
 
@@ -358,21 +352,22 @@ class MarkManager {
   }
 
   Selection _calculateSelection() {
-    final nodeOrderMap = NodeOrderProcessing.createNodeToIndexMap(
-        _currentSelections.first.styledElement.root().node);
-    _currentSelections.sortBy<num>((s) => nodeOrderMap[s.styledElement.node]!);
+    assert(_currentSelections.isNotEmpty);
+    final orderedSelections = _currentSelections.entries.toList(growable: false);
+    final nodeOrderMap =
+        NodeOrderProcessing.createNodeToIndexMap(orderedSelections.first.key.root().node);
+    orderedSelections.sortBy<num>((s) => nodeOrderMap[s.key.node]!);
 
-    final first = _currentSelections.first;
-    final selectionsInStartElement = _currentSelections.takeWhile((e) => e == first).toList();
-    selectionsInStartElement.sortBy<num>((s) => s.selection.start);
+    final first = orderedSelections.first;
+    final selectionsInStartElement = first.value;
+    selectionsInStartElement.sortBy<num>((s) => s.start);
     final startSelection = selectionsInStartElement.first;
 
-    final last = _currentSelections.last;
-    final selectionsInEndElement = _currentSelections.reversed.takeWhile((e) => e == last).toList();
-    selectionsInEndElement.sortBy<num>((s) => s.selection.end);
+    final last = orderedSelections.last;
+    final selectionsInEndElement = last.value;
+    selectionsInEndElement.sortBy<num>((s) => s.end);
     final endSelection = selectionsInEndElement.last;
-    return Selection(startSelection.styledElement, startSelection.selection.start,
-        endSelection.styledElement, endSelection.selection.end);
+    return Selection(first.key, startSelection.start, last.key, endSelection.end);
   }
 
   //************************************************************************//
