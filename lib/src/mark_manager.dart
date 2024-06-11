@@ -58,7 +58,6 @@ class MarkManager {
   /// returning the effected elements.
   static List<StyledElement> addStyleForRange(MarkElement element) {
     List<StyledElement> effectedElements = [];
-    final style = Style(backgroundColor: element.mark.color);
     int characterCount = element.mark.range;
     assert(characterCount > 0);
     for (final e in elementTraversal.postOrderContinuationIterable(element)) {
@@ -72,12 +71,12 @@ class MarkManager {
         if (length > characterCount) {
           final splitElement = e.split(characterCount);
           assert(splitElement.length == 2);
-          splitElement[0].markStyle = style;
+          splitElement[0].addMarkColor(element.mark.color);
           characterCount -= characterCount;
           effectedElements.add(splitElement[0]);
           assert(characterCount == 0);
         } else {
-          e.markStyle = style;
+          e.addMarkColor(element.mark.color);
           characterCount -= length;
           effectedElements.add(e);
         }
@@ -104,14 +103,6 @@ class MarkManager {
     //   }
     //   return collection;
     // });
-    final currentMarkElementsWithoutElement = _currentMarkElements.toList();
-    final hasRemoved = currentMarkElementsWithoutElement.remove(element);
-    assert(hasRemoved, "Mark was not removed.");
-    List<(int, int)> currentMarkRanges = currentMarkElementsWithoutElement
-        .map((e) => (e.mark.start, e.mark.end))
-        .toList(growable: false);
-    List<(int, int)> rangesWithoutAnotherMark =
-        removeRangesFromRange(element.mark.start, element.mark.end, currentMarkRanges);
     int characterCount = element.mark.range;
     for (final e in elementTraversal.postOrderContinuationIterable(element)) {
       assert(
@@ -124,13 +115,24 @@ class MarkManager {
         final int start = element.mark.end - characterCount;
         final int end = start + length;
         characterCount -= length;
-        if (isFullyInRanges(start, end, rangesWithoutAnotherMark)) {
-          e.markStyle = null;
+        if (_isTheOnlyMarkWithThisColorAppliedToRange(start, end, element)) {
+          e.removeMarkColor(element.mark.color);
           effectedElements.add(e);
-        } else {
-          assert(!isPartiallyInRanges(start, end, rangesWithoutAnotherMark),
-              "Ranges should never partially match. An earlier partition of an StyledElement was incorrect.");
         }
+        // else {
+        //   assert(() {
+        //     final currentMarkElementsWithoutElement = _currentMarkElements.toList();
+        //     final hasRemoved = currentMarkElementsWithoutElement.remove(element);
+        //     assert(hasRemoved, "Mark was not removed.");
+        //     List<(int, int)> currentMarkRanges = currentMarkElementsWithoutElement
+        //         .map((e) => (e.mark.start, e.mark.end))
+        //         .toList(growable: false);
+        //     List<(int, int)> rangesWithoutAnotherMark =
+        //         removeRangesFromRange(element.mark.start, element.mark.end, currentMarkRanges);
+        //     return !isPartiallyInRanges(start, end, rangesWithoutAnotherMark);
+        //   }(),
+        //       "Ranges should never partially match. An earlier partition of an StyledElement was incorrect.");
+        // }
         if (characterCount == 0) {
           return effectedElements;
         }
@@ -142,6 +144,20 @@ class MarkManager {
       Log.e("Never reached the end of the marks range.");
     }
     return effectedElements;
+  }
+
+  bool _isTheOnlyMarkWithThisColorAppliedToRange(int start, int end, MarkElement element) {
+    final currentMarkElementsWithoutElement = _currentMarkElements.toList();
+    final hasRemoved = currentMarkElementsWithoutElement.remove(element);
+    assert(hasRemoved, "Mark was not removed.");
+    for (final e in currentMarkElementsWithoutElement) {
+      final overlaps = (start >= e.mark.start && start < e.mark.end) ||
+          (end > e.mark.start && end <= e.mark.end);
+      if (overlaps && e.mark.color == element.mark.color) {
+        return false;
+      }
+    }
+    return true;
   }
 
   //************************************************************************//
@@ -205,8 +221,10 @@ class MarkManager {
   void addMark(Mark mark) {
     int characterCount = 0;
     TextContentElement? placementElement;
-    assert(!_currentMarkElements.map((e) => e.mark).contains(mark),
-        "Mark already exists and is attempted to be added again.");
+    if (_currentMarkElements.map((e) => e.mark).contains(mark)) {
+      Log.e("Mark already exists and is attempted to be added again.");
+      return;
+    }
     for (final element in elementTraversal.postOrderIterable(_root)) {
       if (element is! TextContentElement) {
         continue;
@@ -243,11 +261,11 @@ class MarkManager {
   }
 
   /// Removes the mark and triggers a rebuild for the effected parts.
-  void removeMark(Mark mark) {
+  void removeMark(String markId) {
     final int markToRemoveIndex =
-        _currentMarkElements.indexWhere((element) => element.mark == mark);
+        _currentMarkElements.indexWhere((element) => element.mark.id == markId);
     if (markToRemoveIndex < 0) {
-      Log.e("Could not find the mark to remove:\n$mark");
+      Log.e("Could not find the mark to remove.");
       return;
     }
     final MarkElement markToRemove = _currentMarkElements[markToRemoveIndex];
@@ -256,6 +274,12 @@ class MarkManager {
     _triggerRebuildOnElements(effectedElements);
     markToRemove.disconnectFromParent();
     _currentMarkElements.removeAt(markToRemoveIndex);
+  }
+
+  /// Updates a mark in [_currentMarkElements] with the same id as the provided [mark].
+  void updateMark(Mark mark) {
+    removeMark(mark.id);
+    addMark(mark);
   }
 
   void _triggerRebuildOnElements(List<StyledElement> elements) {
@@ -292,20 +316,6 @@ class MarkManager {
     }
     _currentSelections[styledElement] = selections;
   }
-
-  // old
-  // void registerSelectionEvent(
-  //     StyledElement styledElement, TextSelection? selection, SelectionEvent event) {
-  //   _currentSelections.removeWhere((element) =>
-  //       element.styledElement == styledElement ||
-  //       element.styledElement.isAncestorOf(styledElement));
-  //   if (selection == null ||
-  //       event.type == SelectionEventType.clear ||
-  //       selection.start == selection.end) {
-  //     return;
-  //   }
-  //   _currentSelections.add(SelectionPart(styledElement, selection));
-  // }
 
   /// Marks all current selections
   MarkElement? createMarkElementFromCurrentSelections() {

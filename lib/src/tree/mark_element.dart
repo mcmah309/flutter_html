@@ -18,31 +18,25 @@ class MarkElement extends StyledElement {
 
 /// A mark range.
 class Mark {
-  String id;
-  int start;
-  int end;
+  final String id;
+  final int start;
+  final int end;
   int get range => end - start;
-  String? comment;
-  late Color color;
+  final String? comment;
+  late final Color color;
 
   Mark({required this.id, required this.start, required this.end, this.comment, Color? color})
       : assert(end - start >= 0 && start >= 0 && end >= 0) {
     this.color = color ?? MarkManager.defaultHighlightColor;
   }
 
-  bool overlaps(Mark mark) {
-    return (start >= mark.start && start <= mark.end) || (end >= mark.start && end <= mark.end);
-  }
-
-  (int, int)? overlappingRange(Mark mark) {
-    if (overlaps(mark)) {
-      return (max(start, mark.start), min(end, mark.end));
-    }
-    return null;
-  }
-
-  bool isFullyInRange(int start, int end) {
-    return this.start >= start && this.end <= end;
+  Mark copyWith({String? comment, Color? color}) {
+    return Mark(
+        id: id,
+        start: start,
+        end: end,
+        comment: comment ?? this.comment,
+        color: color ?? this.color);
   }
 
   @override

@@ -39,14 +39,9 @@ class CssBoxWidgetWithInlineSpanChildren extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Style style = styledElement.markStyle == null
-        ? styledElement.style
-        : styledElement.style.merge(styledElement.markStyle!);
-    final child =
-        _generateWidgetChild(context, children, style, styledElement, markManager, rebuild);
+    final child = _generateWidgetChild(context, children, styledElement, markManager, rebuild);
     return CssBoxWidget(
         styledElement: styledElement,
-        style: style,
         markManager: markManager,
         textDirection: textDirection,
         childIsReplaced: childIsReplaced,
@@ -62,7 +57,6 @@ class CssBoxWidget extends StatelessWidget {
       required this.child,
       required this.styledElement,
       required this.markManager,
-      this.style,
       this.textDirection,
       this.childIsReplaced = false,
       this.shrinkWrap = false,
@@ -97,19 +91,9 @@ class CssBoxWidget extends StatelessWidget {
 
   final MarkManager markManager;
 
-  /// The computed style of the [styledElement]. If not provided, just the regular style combined with the mark style is used.
-  final Style? style;
-
   @override
   Widget build(BuildContext context) {
-    final Style style;
-    if (this.style != null) {
-      style = this.style!;
-    } else if (styledElement.markStyle != null) {
-      style = styledElement.style.merge(styledElement.markStyle!);
-    } else {
-      style = styledElement.style;
-    }
+    final style = styledElement.style;
     final markerBox = style.listStylePosition == ListStylePosition.outside
         ? _generateMarkerBoxSpan(style, markManager)
         : null;
@@ -208,12 +192,13 @@ InlineSpan? _generateMarkerBoxSpan(Style style, MarkManager markManager) {
 
 /// Takes a list of InlineSpan children and generates a Text.rich Widget
 /// containing those children.
-Widget _generateWidgetChild(BuildContext context, List<InlineSpan> children, Style style,
+Widget _generateWidgetChild(BuildContext context, List<InlineSpan> children,
     StyledElement styledElement, MarkManager markManager, void Function() rebuild) {
   if (children.isEmpty) {
     return Container();
   }
 
+  final Style style = styledElement.style;
   // Generate an inline marker box if the list-style-position is set to
   // inside. Otherwise the marker box will be added elsewhere.
   if (style.listStylePosition == ListStylePosition.inside) {

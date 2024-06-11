@@ -19,7 +19,6 @@ abstract class ReplacedElement extends StyledElement {
     List<StyledElement>? children,
     required super.node,
     this.alignment = PlaceholderAlignment.aboveBaseline,
-    super.markStyle,
     super.rebuildAssociatedWidget,
   }) : super(
           children: children ?? [],
@@ -34,6 +33,10 @@ abstract class ReplacedElement extends StyledElement {
 
 /// [TextContentElement] is a [ContentElement] with plaintext as its content.
 class TextContentElement extends ReplacedElement {
+  /// The mark [Color]s to apply to the [style] if not empty. Colors are combined
+  // Dev Note: colors are seperated so this can be easily changed and undone.
+  Set<Color>? _markColors;
+
   String get text => node.text;
 
   @override
@@ -42,9 +45,10 @@ class TextContentElement extends ReplacedElement {
   TextContentElement(
       {required Style style,
       required dom.Text node,
-      super.markStyle,
+      Set<Color>? markColors,
       super.rebuildAssociatedWidget})
-      : super(name: "[text]", style: style, node: node, elementId: "[[No ID]]");
+      : _markColors = markColors,
+        super(name: "[text]", style: style, node: node, elementId: "[[No ID]]");
 
   /// splits this [TextContentElement] at the indexes and makes any necessary changes to the
   /// tree. Returns the [TextContentElement]'s acted on.
@@ -125,17 +129,59 @@ class TextContentElement extends ReplacedElement {
     return transformedText;
   }
 
+//************************************************************************//
+  void addMarkColor(Color color) {
+    if (_markColors == null) {
+      _markColors = {color};
+    } else {
+      _markColors!.add(color);
+    }
+  }
+
+  void removeMarkColor(Color color) {
+    if (_markColors != null) {
+      _markColors!.remove(color);
+    }
+  }
+
+  Color? calculateMarkColor() {
+    if (_markColors == null || _markColors!.isEmpty) {
+      return null;
+    }
+
+    int sumAlpha = 0;
+    int sumRed = 0;
+    int sumGreen = 0;
+    int sumBlue = 0;
+    int count = _markColors!.length;
+
+    for (Color color in _markColors!) {
+      sumAlpha += color.alpha;
+      sumRed += color.red;
+      sumGreen += color.green;
+      sumBlue += color.blue;
+    }
+
+    int averageAlpha = sumAlpha ~/ count;
+    int averageRed = sumRed ~/ count;
+    int averageGreen = sumGreen ~/ count;
+    int averageBlue = sumBlue ~/ count;
+
+    return Color.fromARGB(averageAlpha, averageRed, averageGreen, averageBlue);
+  }
+//************************************************************************//
+
   /// Copies the current element, but without the parent
   TextContentElement _copyWithNoParent({
     Style? style,
     dom.Text? node,
-    Style? markStyle,
+    Set<Color>? markColors,
     void Function()? rebuildAssociatedWidget,
   }) {
     return TextContentElement(
         style: style ?? this.style.copyWith(),
         node: node ?? this.node,
-        markStyle: markStyle ?? this.markStyle,
+        markColors: markColors ?? _markColors?.toSet(),
         rebuildAssociatedWidget: rebuildAssociatedWidget ?? this.rebuildAssociatedWidget);
   }
 

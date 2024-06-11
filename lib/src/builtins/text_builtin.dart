@@ -30,12 +30,14 @@ class TextBuiltIn extends HtmlExtension {
 
   @override
   InlineSpan build(ExtensionContext context, MarkManager markManager) {
-    // if (context.styledElement! is EmptyContentElement) {
-    //   assert(false);
-    //   return const TextSpan();
-    // }
     final element = context.styledElement! as TextContentElement;
-    final style = element.markStyle == null ? element.style : element.style.merge(element.markStyle!);
+    final Style style;
+    final markColor = element.calculateMarkColor();
+    if (markColor == null) {
+      style = element.style;
+    } else {
+      style = element.style.copyWith(backgroundColor: markColor);
+    }
     return TextSpan(
       style: style.generateTextStyle(),
       text: element.createTextForSpanWidget(),
