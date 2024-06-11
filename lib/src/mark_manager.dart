@@ -38,6 +38,8 @@ class MarkIconTappedEvent extends MarkEvent {
 class MarkManager {
   static const defaultHighlightColor = Color.fromARGB(150, 255, 229, 127);
 
+  static const primaryColors = [defaultHighlightColor, Color.fromARGB(150, 244, 67, 54), Color.fromARGB(150,33, 150, 243)];
+
   late StyledElement _root;
 
   /// Selections this is aware of and can be turned into a [MarkElement] when
@@ -318,7 +320,7 @@ class MarkManager {
   }
 
   /// Marks all current selections
-  MarkElement? createMarkElementFromCurrentSelections() {
+  MarkElement? createMarkElementFromCurrentSelections({Color color = defaultHighlightColor}) {
     if (_currentSelections.isEmpty) {
       return null;
     }
@@ -366,7 +368,7 @@ class MarkManager {
     final (markMarkerElement, nextTextElement) = _createMarkElement(
         startTextElement,
         offsetInStartTextElement,
-        Mark(id: generateUniqueHtmlCompatibleId(), start: from, end: end));
+        Mark(id: generateUniqueHtmlCompatibleId(), start: from, end: end, color: color));
 
     addStyleForRange(markMarkerElement);
 
