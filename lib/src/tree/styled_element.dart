@@ -53,7 +53,7 @@ class StyledElement {
     if (element == null) {
       return false;
     }
-    final isMatch = executeProtected(() => matches(element!, selector))
+    final isMatch = guard(() => matches(element!, selector))
         .isOkAnd((p0) => p0); // issue https://github.com/Sub6Resources/flutter_html/issues/1298
     return isMatch;
   }
@@ -76,7 +76,7 @@ class StyledElement {
     final input = MemoizedMatchInput(element!, selector);
     var isMatch = _memoizeSelectorMatch[input];
     while (isMatch == null) {
-      isMatch = executeProtected(() => matches(element!, selector))
+      isMatch = guard(() => matches(element!, selector))
           .isOkAnd((p0) => p0); // issue https://github.com/Sub6Resources/flutter_html/issues/1298
       _memoizeSelectorMatch[input] = isMatch;
     }
