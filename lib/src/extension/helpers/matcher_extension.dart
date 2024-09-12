@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/widgets.dart' hide WidgetSpan;
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_html/src/extension/html_extension.dart';
 

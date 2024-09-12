@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart' hide RichText, Text;
+import 'package:flutter/material.dart' hide RichText, Text, WidgetSpan;
 import 'package:flutter/rendering.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_html/src/mark_manager.dart';

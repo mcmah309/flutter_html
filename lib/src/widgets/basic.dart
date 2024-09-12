@@ -1,9 +1,10 @@
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide WidgetSpan;
 import 'package:flutter/rendering.dart' hide RenderParagraph;
 
 import 'paragraph.dart';
+import 'widget_span.dart';
 
 /// A paragraph of rich text.
 ///

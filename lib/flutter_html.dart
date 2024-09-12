@@ -18,5 +18,6 @@ export 'package:flutter_html/src/tree/styled_element.dart';
 export 'package:flutter_html/src/widgets/css_box_widget.dart';
 export 'package:flutter_html/src/widgets/styled_element_widget.dart';
 export 'package:flutter_html/src/widgets/paragraph.dart';
+export 'package:flutter_html/src/widgets/widget_span.dart';
 
 export 'src/mark_manager.dart';
