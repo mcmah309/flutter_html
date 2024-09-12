@@ -1,3 +1,5 @@
+// originally forked from `flutter 3.22.3`
+
 // Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
@@ -439,7 +441,7 @@ class RenderParagraph extends RenderBox
     _textPainter.setPlaceholderDimensions(layoutInlineChildren(
       double.infinity,
       (RenderBox child, BoxConstraints constraints) =>
-          Size(child.getMinIntrinsicWidth(double.infinity), 0.0),
+          Size(child.getMinIntrinsicWidth(double.infinity), 0.0), (_,__,___) => null, 
     ));
     _layoutText(); // layout with infinite width.
     return _textPainter.minIntrinsicWidth;
@@ -455,7 +457,7 @@ class RenderParagraph extends RenderBox
       // Height and baseline is irrelevant as all text will be laid
       // out in a single line. Therefore, using 0.0 as a dummy for the height.
       (RenderBox child, BoxConstraints constraints) =>
-          Size(child.getMaxIntrinsicWidth(double.infinity), 0.0),
+          Size(child.getMaxIntrinsicWidth(double.infinity), 0.0), (_,__,___) => null,
     ));
     _layoutText(); // layout with infinite width.
     return _textPainter.maxIntrinsicWidth;
@@ -466,7 +468,7 @@ class RenderParagraph extends RenderBox
       return 0.0;
     }
     _textPainter
-        .setPlaceholderDimensions(layoutInlineChildren(width, ChildLayoutHelper.dryLayoutChild));
+        .setPlaceholderDimensions(layoutInlineChildren(width, ChildLayoutHelper.dryLayoutChild, (_,__,___) => null));
     _layoutText(minWidth: width, maxWidth: width);
     return _textPainter.height;
   }
@@ -602,7 +604,7 @@ class RenderParagraph extends RenderBox
       return Size.zero;
     }
     _textPainter.setPlaceholderDimensions(
-        layoutInlineChildren(constraints.maxWidth, ChildLayoutHelper.dryLayoutChild));
+        layoutInlineChildren(constraints.maxWidth, ChildLayoutHelper.dryLayoutChild, (_,__,___) => null));
     _layoutText(minWidth: constraints.minWidth, maxWidth: constraints.maxWidth);
     return constraints.constrain(_textPainter.size);
   }
@@ -611,7 +613,7 @@ class RenderParagraph extends RenderBox
   void performLayout() {
     final BoxConstraints constraints = this.constraints;
     _placeholderDimensions =
-        layoutInlineChildren(constraints.maxWidth, ChildLayoutHelper.layoutChild);
+        layoutInlineChildren(constraints.maxWidth, ChildLayoutHelper.layoutChild, (_,__,___) => null);
     _layoutTextWithConstraints(constraints);
     positionInlineChildren(_textPainter.inlinePlaceholderBoxes!);
 
@@ -1260,6 +1262,8 @@ class _SelectableFragment
           case TextGranularity.document:
           case TextGranularity.line:
             assert(false, 'Moving the selection edge by line or document is not supported.');
+          case TextGranularity.paragraph:
+            // not supported in this fork
         }
       case SelectionEventType.clear:
         result = _handleClearSelection();
@@ -1284,6 +1288,8 @@ class _SelectableFragment
           directionallyExtendSelection.isEnd,
           directionallyExtendSelection.direction,
         );
+      case SelectionEventType.selectParagraph:
+        // not support in this fork
     }
 
     if (existingSelectionStart != _textSelectionStart ||
@@ -1745,6 +1751,7 @@ class _SelectableFragment
         final TextBoundary textBoundary = paragraph._textPainter.wordBoundaries.moveByWordBoundary;
         newPosition = _moveBeyondTextBoundaryAtDirection(targetedEdge, forward, textBoundary);
         result = SelectionResult.end;
+      case TextGranularity.paragraph:
       case TextGranularity.line:
         newPosition = _moveToTextBoundaryAtDirection(targetedEdge, forward, LineBoundary(this));
         result = SelectionResult.end;
