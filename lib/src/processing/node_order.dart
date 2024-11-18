@@ -1,5 +1,5 @@
 import 'package:html/dom.dart' as dom;
-import 'package:rust_core/cell.dart';
+import 'package:rust/cell.dart';
 
 /// {@template nodeToIndex}
 /// Creates a map of nodes to node index in order. Can be useful when ordering.

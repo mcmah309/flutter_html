@@ -13,9 +13,9 @@ import 'package:flutter_tools/flutter_tools.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:meta/meta.dart';
 import 'package:rewind/rewind.dart';
-import 'package:rust_core/cell.dart';
-import 'package:rust_core/panic.dart';
-import 'package:rust_core/result.dart';
+import 'package:rust/cell.dart';
+import 'package:rust/panic.dart';
+import 'package:rust/result.dart';
 import 'package:tree_traversal/tree_traversal.dart';
 
 import 'widgets/paragraph.dart';

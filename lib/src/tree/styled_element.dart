@@ -7,7 +7,7 @@ import 'package:html/dom.dart' as dom;
 //ignore: implementation_imports
 import 'package:html/src/query_selector.dart';
 import 'package:list_counter/list_counter.dart';
-import 'package:rust_core/result.dart';
+import 'package:rust/result.dart';
 
 import '../processing/node_order.dart';
 
