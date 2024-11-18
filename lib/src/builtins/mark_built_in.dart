@@ -3,7 +3,6 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_tools/flutter_tools.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:rewind/rewind.dart';
-import 'package:rust/cell.dart';
 
 /// Adds a mark mark to the to the Text elements for the specified range and color. A mark consists of marking and
 /// adding a comment annotation widget
