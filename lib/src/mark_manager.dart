@@ -333,10 +333,10 @@ class MarkManager {
     TextContentElement startTextElement;
     int offsetInStartTextElement;
     switch (result) {
-      case Ok(:final ok):
-        (startTextElement, offsetInStartTextElement) = ok;
-      case Err(:final err):
-        Log.e(err, append: "Some selection may have been corrupted. Resetting..");
+      case Ok(:final okay):
+        (startTextElement, offsetInStartTextElement) = okay;
+      case Err(:final error):
+        Log.e(error, append: "Some selection may have been corrupted. Resetting..");
         _currentSelections.clear();
         return null;
     }
@@ -346,10 +346,10 @@ class MarkManager {
     TextContentElement endTextElement;
     int offsetInEndTextElement;
     switch (result) {
-      case Ok(:final ok):
-        (endTextElement, offsetInEndTextElement) = ok;
-      case Err(:final err):
-        Log.e(err, append: "Some selection may have been corrupted. Resetting..");
+      case Ok(:final okay):
+        (endTextElement, offsetInEndTextElement) = okay;
+      case Err(:final error):
+        Log.e(error, append: "Some selection may have been corrupted. Resetting..");
         _currentSelections.clear();
         return null;
     }
