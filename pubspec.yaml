@@ -29,12 +29,15 @@ dependencies:
       url: git@github.com:mcmah309/tree_traversal.git
       ref: main
 
-  rust: ^2.0.0
-  rewind: ^0.3.2
+  rust: ^3.0.0
+  rewind: ^0.3.5
   meta: ^1.8.0
 
   flutter:
     sdk: flutter
+
+# dependency_overrides:
+#   rust: 3.0.0-dev.2
 
 dev_dependencies:
   flutter_test:
